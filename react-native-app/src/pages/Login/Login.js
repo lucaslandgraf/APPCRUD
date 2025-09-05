@@ -1,7 +1,7 @@
 import { StyleSheet, View, Text, TextInput, TouchableOpacity } from "react-native"
 import { Feather } from "@expo/vector-icons";
 
-export default function Home(){
+export default function Login({navigation}){
     return(
         <View style={Estilo.container}>
             <View style={Estilo.box}>
@@ -46,7 +46,7 @@ export default function Home(){
                 </TouchableOpacity>
 
                 {/* Botão de login */}
-                <TouchableOpacity style={Estilo.botao} onPress={() => alert("Entrando no sistema...")}>
+                <TouchableOpacity style={Estilo.botao} onPress={() => navigation.navigate("MainTabs")}>
                     <Text style={{color: '#fff', fontWeight: 'bold', fontSize: 16}}>
                         Entrar no Sistema
                     </Text>
@@ -74,7 +74,7 @@ const Estilo = StyleSheet.create({
     margin: 10,
   },
   box:{
-    width: '60%',     
+    width: 350,     
     padding: 20,              
     backgroundColor: '#FEFEFE',  
     borderRadius: 12,    
@@ -117,7 +117,7 @@ const Estilo = StyleSheet.create({
     color: "#2480F9",
     textDecorationLine: "underline",
     margin: 4,
-    alignSelf: 'flex-end', // <-- CORREÇÃO AQUI
+    alignSelf: 'flex-end', 
   },
 
   botao:{
