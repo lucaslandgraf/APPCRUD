@@ -10,6 +10,11 @@ import Login from './src/pages/Login/Login';
 import Home from './src/pages/MainTabs/Home/Home';
 import Funcionalidades from './src/pages/MainTabs/Funcionalidades/Funcionalidades';
 import Perfil from './src/pages/MainTabs/Perfil/Perfil';
+import Paciente from './src/pages/MainTabs/Paciente/Paciente';
+import Exames from './src/pages/MainTabs/Exames/Exame';
+import Alunos from './src/pages/MainTabs/Alunos/Alunos';
+import Agendamentos from './src/pages/MainTabs/Agendamentos/Agendamentos';
+import Relatorios from './src/pages/MainTabs/Relatorios/Relatorios';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -60,6 +65,11 @@ export default function App() {
       <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="MainTabs" component={TabNavigator} />
+        <Stack.Screen name="Pacientes" component={Paciente}/>
+        <Stack.Screen name="Exames" component={Exames}/>
+        <Stack.Screen name="Alunos" component={Alunos}/>
+        <Stack.Screen name="Agendamentos" component={Agendamentos}/>
+        <Stack.Screen name="Relatorios" component={Relatorios}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
