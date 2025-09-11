@@ -1,8 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 export default function Funcionalidades() {
+    const navigation = useNavigation();
     return (
         <View style={Estilo.container}>
             <View style={Estilo.top}>
@@ -12,7 +14,7 @@ export default function Funcionalidades() {
             
             <ScrollView showsVerticalScrollIndicator={false}>
 
-                <TouchableOpacity style={Estilo.button}>
+                <TouchableOpacity style={Estilo.button} onPress={() => navigation.navigate("Pacientes")}>
                     <View style={Estilo.icon}>
                         <Feather name="user-plus" size={27} color="rgba(36, 128, 249, 0.8)" />
                     </View>
@@ -20,7 +22,7 @@ export default function Funcionalidades() {
                     <Text style={Estilo.subtitle}>Cadastro e gerenciamento de pacientes</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={Estilo.button}>
+                <TouchableOpacity style={Estilo.button} onPress={() => navigation.navigate("Agendamentos")}>
                     <View style={Estilo.icon}>
                         <Feather name="calendar" size={25} color="rgba(36, 128, 249, 0.8)" />
                     </View>
@@ -28,7 +30,7 @@ export default function Funcionalidades() {
                     <Text style={Estilo.subtitle}>Controle de consultas e procedimentos</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={Estilo.button}>
+                <TouchableOpacity style={Estilo.button} onPress={() => navigation.navigate("Relatorios")}>
                     <View style={Estilo.icon}>
                         <Feather name="file-text" size={25} color="rgba(36, 128, 249, 0.8)" />
                     </View>
@@ -36,7 +38,7 @@ export default function Funcionalidades() {
                     <Text style={Estilo.subtitle}>Relatórios e estatísticas do sistema</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={Estilo.button}>
+                <TouchableOpacity style={Estilo.button} onPress={() => navigation.navigate("Alunos")}>
                     <View style={Estilo.icon}>
                         <MaterialCommunityIcons name="school-outline" size={25} color="rgba(36, 128, 249, 0.8)" />
                     </View>
@@ -44,7 +46,7 @@ export default function Funcionalidades() {
                     <Text style={Estilo.subtitle}>Cadastro de novos usuários no sistema</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={Estilo.button}>
+                <TouchableOpacity style={Estilo.button} onPress={() => navigation.navigate("Exames")}>
                     <View style={Estilo.icon}>
                         <Feather name="activity" size={25} color="rgba(36, 128, 249, 0.8)" />
                     </View>
