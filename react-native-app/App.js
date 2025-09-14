@@ -70,6 +70,7 @@ export default function App() {
         <Stack.Screen name="Alunos" component={Alunos}/>
         <Stack.Screen name="Agendamentos" component={Agendamentos}/>
         <Stack.Screen name="Relatorios" component={Relatorios}/>
+        <Stack.Screen name="Funcionalidades" component={Funcionalidades}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
