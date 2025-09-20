@@ -91,10 +91,9 @@ const Estilo = StyleSheet.create({
   blocos: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '90%',
+    width: '95%',
     marginBottom: 20,
     marginTop: 20,
-    marginRight: 20,
     alignSelf: 'center',
   },
   containerAcoes: {
