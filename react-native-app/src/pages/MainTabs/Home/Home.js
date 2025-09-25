@@ -26,7 +26,7 @@ export default function Home({ navigation }) {
 
         <View style={Estilo.containerBotoes}>
 
-          <TouchableOpacity style={Estilo.button}>
+          <TouchableOpacity style={Estilo.button} onPress={ () => navigation.navigate('Pacientes')}>
             <View style={Estilo.icon}>
               <Feather name="user-plus" size={25} color="rgba(36, 128, 249, 0.8)" />
             </View>
@@ -36,7 +36,7 @@ export default function Home({ navigation }) {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={Estilo.button}>
+          <TouchableOpacity style={Estilo.button} onPress={ () => navigation.navigate('Agendamentos')}>
             <View style={Estilo.icon}>
               <Feather name="calendar" size={25} color="rgba(36, 128, 249, 0.8)" />
             </View>
@@ -46,7 +46,7 @@ export default function Home({ navigation }) {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={Estilo.button}>
+          <TouchableOpacity style={Estilo.button} onPress={ () => navigation.navigate('Exames')}>
             <View style={Estilo.icon}>
               <Feather name="activity" size={25} color="rgba(36, 128, 249, 0.8)" />
             </View>
@@ -65,7 +65,7 @@ export default function Home({ navigation }) {
 const Estilo = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f0f4f7',
   },
   title: {
     fontSize: 18,
