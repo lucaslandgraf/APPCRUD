@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   SafeAreaView,
   View,
@@ -10,20 +11,15 @@ import {
 
 export default function Paciente({ navigation }) {
   const handleAddPatient = () => {
-    console.log('Adicionar Paciente');
+    navigation.navigate('CadastroPacientes');
   };
 
   const handleEditPatient = () => {
-    console.log('Editar Paciente');
-  };
-
-  const handleNavigation = (item) => {
-    console.log(`Navegação: ${item}`);
+    navigation.navigate('ListagemPacientes');
   };
 
   const handleGoBack = () => {
-    console.log('Voltar para Funcionalidades');
-
+    navigation.goBack();
   };
 
   return (
@@ -32,21 +28,21 @@ export default function Paciente({ navigation }) {
       
       {/* Header */}
       <View style={Estilo.header}>
-        <TouchableOpacity onPress={() => navigation.navigate("Funcionalidades")} style={Estilo.backButton}>
+        <TouchableOpacity onPress={handleGoBack} style={Estilo.backButton}>
           <Text style={Estilo.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={Estilo.headerIcon}>👥</Text>
         <Text style={Estilo.headerTitle}>Pacientes</Text>
       </View>
       
-      {/* Conteúdo */}
+      {/* Content */}
       <ScrollView style={Estilo.content}>
-        {/* Descrição */}
+        {/* Description */}
         <Text style={Estilo.description}>
           Gerenciar cadastro de pacientes, histórico médico e informações pessoais.
         </Text>
         
-        {/* Card adicionar paciente */}
+        {/* Add Patient Card */}
         <TouchableOpacity style={Estilo.addCard} onPress={handleAddPatient}>
           <View style={Estilo.addIconContainer}>
             <Text style={Estilo.addIcon}>+</Text>
@@ -57,7 +53,7 @@ export default function Paciente({ navigation }) {
           </View>
         </TouchableOpacity>
         
-        {/* Card edição de paciente */}
+        {/* Edit Patient Card */}
         <TouchableOpacity style={Estilo.editCard} onPress={handleEditPatient}>
           <View style={Estilo.editIconContainer}>
             <Text style={Estilo.editIcon}>✏️</Text>
@@ -192,6 +188,6 @@ const Estilo = StyleSheet.create({
     fontSize: 14,
     color: '#6c757d',
     lineHeight: 20,
-  }
+  },
 });
 
