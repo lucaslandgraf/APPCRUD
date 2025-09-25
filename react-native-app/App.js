@@ -15,6 +15,12 @@ import Exames from './src/pages/MainTabs/Exames/Exame';
 import Alunos from './src/pages/MainTabs/Alunos/Alunos';
 import Agendamentos from './src/pages/MainTabs/Agendamentos/Agendamentos';
 import Relatorios from './src/pages/MainTabs/Relatorios/Relatorios';
+import RelatorioPaciente from './src/pages/MainTabs/Relatorios/RelatorioPaciente'
+import GraficoRelatorio from './src/pages/MainTabs/Relatorios/GraficoRelatorio';
+import CadastroPacientes from './src/pages/MainTabs/Paciente/CadastroPaciente';
+import ListaPacientes from './src/pages/MainTabs/Paciente/ListagemPacientes';
+import EditarPaciente from './src/pages/MainTabs/Paciente/EdicaoPaciente';
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -37,7 +43,8 @@ function TabNavigator() {
     name="Início" 
     component={Home} 
     options={{
-      tabBarIcon: ({ color, size }) => <Feather name="home" size={22} color={color} />,
+      tabBarIcon: ({ color, size }) => <Feather name="home" size={22} color={color}/>,
+      unmountOnBlur: true
     }}
   />
   <Tab.Screen 
@@ -45,6 +52,7 @@ function TabNavigator() {
     component={Funcionalidades} 
     options={{
       tabBarIcon: ({ color, size }) => <Feather name="heart" size={22} color={color} />,
+      unmountOnBlur: true
     }}
   />
   <Tab.Screen 
@@ -66,10 +74,17 @@ export default function App() {
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="MainTabs" component={TabNavigator} />
         <Stack.Screen name="Pacientes" component={Paciente}/>
+        <Stack.Screen name="CadastroPacientes" component={CadastroPacientes}/>
+        <Stack.Screen name="ListagemPacientes" component={ListaPacientes}/>
+        <Stack.Screen name="EditaPaciente" component={EditarPaciente}/>
         <Stack.Screen name="Exames" component={Exames}/>
         <Stack.Screen name="Alunos" component={Alunos}/>
         <Stack.Screen name="Agendamentos" component={Agendamentos}/>
         <Stack.Screen name="Relatorios" component={Relatorios}/>
+        <Stack.Screen name="RelatorioPaciente" component={RelatorioPaciente}/>
+        <Stack.Screen name="GraficoRelatorio" component={GraficoRelatorio}/>
+        <Stack.Screen name="Funcionalidades" component={Funcionalidades}/>
+        <Stack.Screen name="Inicio" component={Home}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
