@@ -14,13 +14,17 @@ import Paciente from './src/pages/MainTabs/Paciente/Paciente';
 import Exames from './src/pages/MainTabs/Exames/Exame';
 import Alunos from './src/pages/MainTabs/Alunos/Alunos';
 import Agendamentos from './src/pages/MainTabs/Agendamentos/Agendamentos';
+import CadastroAgendamento from './src/pages/MainTabs/Agendamentos/CadastroAgendamento';
+import ListagemAgendamentos from './src/pages/MainTabs/Agendamentos/ListagemAgendamentos';
 import Relatorios from './src/pages/MainTabs/Relatorios/Relatorios';
 import RelatorioPaciente from './src/pages/MainTabs/Relatorios/RelatorioPaciente'
 import GraficoRelatorio from './src/pages/MainTabs/Relatorios/GraficoRelatorio';
 import CadastroPacientes from './src/pages/MainTabs/Paciente/CadastroPaciente';
 import ListaPacientes from './src/pages/MainTabs/Paciente/ListagemPacientes';
 import EditarPaciente from './src/pages/MainTabs/Paciente/EdicaoPaciente';
-
+import CadastroExames from './src/pages/MainTabs/Exames/CadastroExames';
+import ListagemExames from './src/pages/MainTabs/Exames/ListagemExames';
+import EdicaoExames from './src/pages/MainTabs/Exames/EdicaoExames';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -78,8 +82,12 @@ export default function App() {
         <Stack.Screen name="ListagemPacientes" component={ListaPacientes}/>
         <Stack.Screen name="EditaPaciente" component={EditarPaciente}/>
         <Stack.Screen name="Exames" component={Exames}/>
+        <Stack.Screen name="CadastroExames" component={CadastroExames}/>
+        <Stack.Screen name="ListagemExames" component={ListagemExames}/>
         <Stack.Screen name="Alunos" component={Alunos}/>
         <Stack.Screen name="Agendamentos" component={Agendamentos}/>
+        <Stack.Screen name="CadastroAgendamento" component={CadastroAgendamento}/>
+        <Stack.Screen name="ListagemAgendamentos" component={ListagemAgendamentos}/>
         <Stack.Screen name="Relatorios" component={Relatorios}/>
         <Stack.Screen name="RelatorioPaciente" component={RelatorioPaciente}/>
         <Stack.Screen name="GraficoRelatorio" component={GraficoRelatorio}/>
