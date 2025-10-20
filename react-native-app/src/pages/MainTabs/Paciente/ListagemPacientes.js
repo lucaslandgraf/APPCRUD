@@ -7,7 +7,9 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
+  Alert,
 } from 'react-native';
+import { Octicons } from "@expo/vector-icons"; 
 
 const mockPacientes = [
   { id: '1', nome: 'João Silva', idade: 34, cpf: '123.456.789-00' },
@@ -22,8 +24,26 @@ export default function ListaPacientes({ navigation }) {
 
   const handleEditPatient = (paciente) => {
     console.log('Editar Paciente:', paciente);
-    // Navegar para tela de edição passando paciente como parâmetro
-    navigation.navigate('EditarPaciente', { paciente });
+    navigation.navigate('EditarPaciente', { paciente }); 
+  };
+  
+  const handleDeletePatient = (paciente) => {
+    Alert.alert(
+        "Confirmar exclusão",
+        `Tem certeza que deseja excluir o paciente ${paciente.nome}?`,
+        [
+            { text: "Cancelar", style: "cancel" },
+            {
+                text: "Excluir",
+                style: "destructive",
+                onPress: () => {
+                    // Lógica de exclusão real (API, estado, etc.)
+                    console.log('Excluir Paciente:', paciente.id);
+                    Alert.alert("Sucesso", `Paciente ${paciente.nome} excluído (simulado).`);
+                },
+            },
+        ]
+    );
   };
 
   const handleGoBack = () => {
@@ -34,21 +54,18 @@ export default function ListaPacientes({ navigation }) {
     <SafeAreaView style={Estilo.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
-      {/* Header */}
       <View style={Estilo.header}>
         <TouchableOpacity onPress={handleGoBack} style={Estilo.backButton}>
-          <Text style={Estilo.backButtonText}>←</Text>
+          <Text style={Estilo.backButtonText}>← Voltar</Text>
         </TouchableOpacity>
-        <Text style={Estilo.headerIcon}>👥</Text>
-        <Text style={Estilo.headerTitle}>Pacientes</Text>
+
+        <Text style={Estilo.headerTitle}>Visualizar Pacientes</Text>
       </View>
 
-      {/* Description */}
       <Text style={Estilo.description}>
         Gerenciar cadastro de pacientes, histórico médico e informações pessoais.
       </Text>
 
-      {/* Add Patient Card */}
       <TouchableOpacity style={Estilo.addCard} onPress={handleAddPatient}>
         <View style={Estilo.addIconContainer}>
           <Text style={Estilo.addIcon}>+</Text>
@@ -61,10 +78,9 @@ export default function ListaPacientes({ navigation }) {
 
       <ScrollView style={Estilo.content}>
         {mockPacientes.map((paciente) => (
-          <TouchableOpacity
+          <View
             key={paciente.id}
             style={Estilo.patientCard}
-            onPress={() => handleEditPatient(paciente)}
           >
             <View style={Estilo.patientInfo}>
               <Text style={Estilo.patientName}>{paciente.nome}</Text>
@@ -73,8 +89,23 @@ export default function ListaPacientes({ navigation }) {
               </Text>
               <Text style={Estilo.patientDetails}>CPF: {paciente.cpf}</Text>
             </View>
-            <Text style={Estilo.editIcon}>✏️</Text>
-          </TouchableOpacity>
+            
+            <View style={Estilo.actionsContainer}>
+                <TouchableOpacity
+                    style={Estilo.actionButton}
+                    onPress={() => handleEditPatient(paciente)}
+                >
+                    <Octicons name="pencil" size={20} color="#2480f9" /> 
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[Estilo.actionButton, { marginLeft: 10 }]}
+                    onPress={() => handleDeletePatient(paciente)}
+                >
+                    <Octicons name="trash" size={20} color="#dc3545" /> 
+                </TouchableOpacity>
+            </View>
+          </View>
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -131,7 +162,7 @@ const Estilo = StyleSheet.create({
     marginTop: 10,
   },
 
-  // Add Card Styles (copiado do modelo)
+  // Add Card Styles
   addCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
@@ -207,8 +238,16 @@ const Estilo = StyleSheet.create({
     fontSize: 14,
     color: '#6c757d',
   },
-  editIcon: {
-    fontSize: 20,
+
+  actionsContainer: { 
+    flexDirection: "row",
     marginLeft: 16,
+  },
+  actionButton: {
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: "#e9f1ff", 
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

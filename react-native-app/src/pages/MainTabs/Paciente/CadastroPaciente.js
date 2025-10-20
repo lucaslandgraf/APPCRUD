@@ -18,8 +18,8 @@ export default function CadastroPaciente({ navigation }) {
   const [telefone, setTelefone] = useState('');
   const [email, setEmail] = useState('');
 
-  // **IMPORTANTE**: Substitua esta URL pela URL real do seu backend PHP
-  const API_URL = 'http://localhost'; // Exemplo: http://seu-servidor.com
+  
+  const API_URL = 'http://localhost'; 
 
   const handleSave = async () => {
     if (!nome || !dataNascimento || !cpf || !telefone || !email) {

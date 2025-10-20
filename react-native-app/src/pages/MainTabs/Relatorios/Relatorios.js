@@ -28,14 +28,14 @@ export default function Paciente({ navigation }) {
         <Text style={Estilo.headerTitle}>Relatórios</Text>
       </View>
       
-      {/* Content */}
+      {/* Contento */}
       <ScrollView style={Estilo.content}>
-        {/* Description */}
+        {/* Descrição */}
         <Text style={Estilo.description}>
           Acesse relatórios de pacientes e análises estatísticas.
         </Text>
         
-        {/* Add Patient Card */}
+        {/* Add Paciente Cartão */}
         <TouchableOpacity style={Estilo.addCard} onPress={handleAddPatient}>
           <View style={Estilo.addIconContainer}>
             <Text style={Estilo.addIcon}>+</Text>
@@ -46,7 +46,7 @@ export default function Paciente({ navigation }) {
           </View>
         </TouchableOpacity>
         
-        {/* Edit Patient Card */}
+        {/* Edit Paciente Cartão */}
         <TouchableOpacity style={Estilo.editCard} onPress={handleEditPatient}>
       <View style={Estilo.editIconContainer}>
         <Octicons style={Estilo.editIcon} name="graph" size={27} color="rgba(36, 128, 249, 0.8)" />
@@ -67,7 +67,7 @@ const Estilo = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   
-  // Header Styles
+  // Header Estilo
   header: {
     backgroundColor: '#ffffff',
     flexDirection: 'row',
