@@ -11,14 +11,17 @@ import {
   Alert,
 } from 'react-native';
 
-export default function CadastroPacienteScreen({ navigation }) {
+export default function CadastroPaciente({ navigation }) {
   const [nome, setNome] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
   const [cpf, setCpf] = useState('');
   const [telefone, setTelefone] = useState('');
   const [email, setEmail] = useState('');
 
-  const handleSave = () => {
+  
+  const API_URL = 'http://localhost'; 
+
+  const handleSave = async () => {
     if (!nome || !dataNascimento || !cpf || !telefone || !email) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
       return;
@@ -31,14 +34,34 @@ export default function CadastroPacienteScreen({ navigation }) {
       telefone,
       email,
     };
-    console.log('Paciente Cadastrado:', paciente);
-    Alert.alert('Sucesso', 'Paciente cadastrado com sucesso!');
-    // Limpar formulário
-    setNome('');
-    setDataNascimento('');
-    setCpf('');
-    setTelefone('');
-    setEmail('');
+
+    try {
+      const response = await fetch(`${API_URL}/cadastrarPaciente.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paciente),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        Alert.alert('Sucesso', result.message || 'Paciente cadastrado com sucesso!');
+        // Limpar formulário
+        setNome('');
+        setDataNascimento('');
+        setCpf('');
+        setTelefone('');
+        setEmail('');
+        navigation.goBack(); // Volta para a tela anterior (Pacientes)
+      } else {
+        Alert.alert('Erro', result.message || 'Erro ao cadastrar paciente.');
+      }
+    } catch (error) {
+      console.error('Erro na requisição:', error);
+      Alert.alert('Erro', 'Não foi possível conectar ao servidor. Verifique sua conexão ou a URL da API.');
+    }
   };
 
   const handleGoBack = () => {
@@ -52,7 +75,7 @@ export default function CadastroPacienteScreen({ navigation }) {
       {/* Header */}
       <View style={Estilo.header}>
         <TouchableOpacity onPress={handleGoBack} style={Estilo.backButton}>
-            <Text style={Estilo.backButtonText}>←</Text>
+          <Text style={Estilo.backButtonText}>← Voltar</Text>
         </TouchableOpacity>
         <Text style={Estilo.headerTitle}>Cadastro de Paciente</Text>
       </View>
@@ -119,11 +142,12 @@ const Estilo = StyleSheet.create({
   },
   header: {
     backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
-    alignItems: 'center',
   },
   backButton: {
     marginRight: 10,
@@ -159,7 +183,7 @@ const Estilo = StyleSheet.create({
     color: '#212529',
   },
   saveButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: 'blue',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -172,4 +196,3 @@ const Estilo = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

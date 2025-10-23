@@ -8,6 +8,7 @@ import {
   StyleSheet,
   StatusBar,
 } from 'react-native';
+import { Octicons, Feather } from "@expo/vector-icons";
 
 export default function Paciente({ navigation }) {
   const handleAddPatient = () => {
@@ -31,7 +32,7 @@ export default function Paciente({ navigation }) {
         <TouchableOpacity onPress={handleGoBack} style={Estilo.backButton}>
           <Text style={Estilo.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={Estilo.headerIcon}>👥</Text>
+        <Feather style={Estilo.headerIcon} name="users" size={27} color="rgba(36, 128, 249, 0.8)" />
         <Text style={Estilo.headerTitle}>Pacientes</Text>
       </View>
       
@@ -56,11 +57,11 @@ export default function Paciente({ navigation }) {
         {/* Edit Patient Card */}
         <TouchableOpacity style={Estilo.editCard} onPress={handleEditPatient}>
           <View style={Estilo.editIconContainer}>
-            <Text style={Estilo.editIcon}>✏️</Text>
+            <Octicons style={Estilo.editIcon} name="pencil" size={27} color="rgba(36, 128, 249, 0.8)" />
           </View>
           <View style={Estilo.cardText}>
-            <Text style={Estilo.cardTitle}>Editar Paciente</Text>
-            <Text style={Estilo.cardSubtitle}>Atualizar informações de pacientes existentes</Text>
+            <Text style={Estilo.cardTitle}>Visualizar Paciente</Text>
+            <Text style={Estilo.cardSubtitle}>Veja os pacientes cadastrados</Text>
           </View>
         </TouchableOpacity>
       </ScrollView>
@@ -92,7 +93,6 @@ const Estilo = StyleSheet.create({
     color: '#4285f4',
   },
   headerIcon: {
-    fontSize: 24,
     marginRight: 12,
   },
   headerTitle: {
@@ -171,7 +171,7 @@ const Estilo = StyleSheet.create({
     fontWeight: 'bold',
   },
   editIcon: {
-    fontSize: 20,
+    fontSize: 27,
   },
   
   // Card Text Styles
@@ -190,4 +190,3 @@ const Estilo = StyleSheet.create({
     lineHeight: 20,
   },
 });
-
