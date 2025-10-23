@@ -1,0 +1,35 @@
+# Node modules
+node_modules/
+
+# Environment files (credenciais)
+.env
+*.env
+
+# Logs e debug
+*.log
+npm-debug.log
+yarn-debug.log
+*.cache
+
+# Diretórios e arquivos de IDE
+.vscode/
+.idea/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Arquivos temporários / backups
+*.bak
+*~
+*.tmp
+*.swp
+*.swo
+
+# Uploads temporários
+/uploads/tmp/
+/uploads/cache/
+
+# Arquivos de e-mail temporários
+*.eml
