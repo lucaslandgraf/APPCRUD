@@ -9,61 +9,22 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
-  Alert,
 } from 'react-native';
 
-export default function CadastroExames({ navigation }) {
-  const [tipoExame, setTipoExame] = useState('');
-  const [agendamentoId, setAgendamentoId] = useState('');
-  const [pacienteId, setPacienteId] = useState('');
-  const [nomeExame, setNomeExame] = useState('');
-
-  const handleSave = async () => {
-    if (!tipoExame || !agendamentoId || !pacienteId || !nomeExame) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
-      return;
-    }
-
-    const exame = {
-      acao: 'cadastrar',
-      tipo_exame: tipoExame,
-      agendamento_id: agendamentoId,
-      paciente_id: pacienteId,
-      nome_exame: nomeExame,
-    };
-
-    try {
-      const response = await fetch('exames/controller/ExamesController.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(exame),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao cadastrar exame');
-      }
-
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      Alert.alert('Sucesso', 'Exame cadastrado com sucesso!');
-      setTipoExame('');
-      setAgendamentoId('');
-      setPacienteId('');
-      setNomeExame('');
-      navigation.goBack();
-    } catch (error) {
-      Alert.alert('Erro', error.message);
-    }
-  };
+export default function CadastroAlunos({ navigation }) {
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [tipoUsuario, setTipoUsuario] = useState('');
+  const [senha, setSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
 
   const handleGoBack = () => {
     navigation.goBack();
+  };
+
+  const handleSave = () => {
+    // Aqui futuramente vai a conexão com a API
+    console.log('Aluno salvo (simulação)');
   };
 
   return (
@@ -74,47 +35,64 @@ export default function CadastroExames({ navigation }) {
         <TouchableOpacity onPress={handleGoBack} style={Estilo.backButton}>
           <Text style={Estilo.backButtonText}>← Voltar</Text>
         </TouchableOpacity>
-        <Text style={Estilo.headerTitle}>Cadastro de Exame</Text>
+        <Text style={Estilo.headerTitle}>Cadastro de Aluno</Text>
       </View>
 
       <ScrollView style={Estilo.content}>
-        <Text style={Estilo.label}>Tipo do Exame</Text>
+        {/* Campo NOME */}
+        <Text style={Estilo.label}>Nome</Text>
         <TextInput
           style={Estilo.input}
-          placeholder="Ex: dengue, abo, covid"
-          value={tipoExame}
-          onChangeText={setTipoExame}
+          placeholder="Nome completo do aluno"
+          value={nome}
+          onChangeText={setNome}
+          autoCapitalize="words"
+        />
+
+        {/* Campo E-MAIL */}
+        <Text style={Estilo.label}>E-mail</Text>
+        <TextInput
+          style={Estilo.input}
+          placeholder="exemplo@dominio.com"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
           autoCapitalize="none"
         />
 
-        <Text style={Estilo.label}>ID do Agendamento</Text>
+        {/* Campo TIPO DE USUÁRIO */}
+        <Text style={Estilo.label}>Tipo de Usuário</Text>
         <TextInput
           style={Estilo.input}
-          placeholder="ID do agendamento"
-          value={agendamentoId}
-          onChangeText={setAgendamentoId}
-          keyboardType="numeric"
+          placeholder="ADM ou DEFAULT"
+          value={tipoUsuario}
+          onChangeText={setTipoUsuario}
+          autoCapitalize="characters"
         />
 
-        <Text style={Estilo.label}>ID do Paciente</Text>
+        {/* Campo SENHA */}
+        <Text style={Estilo.label}>Senha</Text>
         <TextInput
           style={Estilo.input}
-          placeholder="ID do paciente"
-          value={pacienteId}
-          onChangeText={setPacienteId}
-          keyboardType="numeric"
+          placeholder="Digite a senha"
+          value={senha}
+          onChangeText={setSenha}
+          secureTextEntry={true}
         />
 
-        <Text style={Estilo.label}>Nome do Exame</Text>
+        {/* Campo CONFIRMAR SENHA */}
+        <Text style={Estilo.label}>Confirmar Senha</Text>
         <TextInput
           style={Estilo.input}
-          placeholder="Ex: Hemograma Completo"
-          value={nomeExame}
-          onChangeText={setNomeExame}
+          placeholder="Confirme a senha"
+          value={confirmarSenha}
+          onChangeText={setConfirmarSenha}
+          secureTextEntry={true}
         />
 
+        {/* Botão SALVAR */}
         <TouchableOpacity style={Estilo.saveButton} onPress={handleSave}>
-          <Text style={Estilo.saveButtonText}>Salvar Exame</Text>
+          <Text style={Estilo.saveButtonText}>Salvar Aluno</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
