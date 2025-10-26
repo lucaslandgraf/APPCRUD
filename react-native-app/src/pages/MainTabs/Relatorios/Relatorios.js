@@ -1,5 +1,6 @@
 import React from 'react';
-import {SafeAreaView, View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar,} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {SafeAreaProvider, View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar,} from 'react-native';
 import { Octicons, Feather } from "@expo/vector-icons";
 
 export default function Paciente({ navigation }) {
