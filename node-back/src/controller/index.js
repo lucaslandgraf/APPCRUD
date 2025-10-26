@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const pool = require('../db/mysqlConnect');
-const { cadastroUsuario } = require('../modules/acesso/controller/usuarioController');
+const { cadastroUsuario, loginUsuario, recuperarSenha, alterarSenha } = require('../modules/acesso/controller/usuarioController');
 
 const app = express();
 
@@ -48,6 +48,11 @@ app.get("/getpaciente", async (req, res) => {
 }) */
 
 app.post('/cadastro', cadastroUsuario);
+app.post('/login', loginUsuario);
+app.post('/recuperar-senha', recuperarSenha);
+
+// 2. ADICIONE A NOVA ROTA:
+app.post('/alterar-senha', alterarSenha);
 
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
