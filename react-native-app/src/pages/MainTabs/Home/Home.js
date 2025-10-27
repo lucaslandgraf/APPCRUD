@@ -46,13 +46,13 @@ export default function Home({ navigation }) {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={Estilo.button} onPress={ () => navigation.navigate('Exames')}>
+          <TouchableOpacity style={Estilo.button} onPress={ () => navigation.navigate('Relatorios')}>
             <View style={Estilo.icon}>
-              <Feather name="activity" size={25} color="rgba(36, 128, 249, 0.8)" />
+              <Feather name="file-text" size={25} color="rgba(36, 128, 249, 0.8)" />
             </View>
             <View>
-              <Text>Exames</Text>
-              <Text style={{color:"#838383ff"}}>Novo exame</Text>
+              <Text>Relatórios</Text>
+              <Text style={{color:"#838383ff"}}>Consultar Relatórios</Text>
             </View>
           </TouchableOpacity>
 
@@ -117,17 +117,17 @@ const Estilo = StyleSheet.create({
     width: '100%',
     justifyContent: 'flex-start',
     gap: 15,
-    marginLeft: 40, // mantém como você queria
+    marginLeft: 40, 
   },
   blocodados: {
     backgroundColor: '#fff',
     padding: 10,
     borderRadius: 5,
-    flex: 1,                // ocupa espaço proporcional
+    flex: 1,                
     alignItems: 'center',
     elevation: 5,
     justifyContent: 'center',
     gap: 5,
-    marginHorizontal: 6,    // espaçamento entre os blocos
+    marginHorizontal: 6,    
   },
 });

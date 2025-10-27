@@ -1,22 +1,50 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from "react-native";
+import React, { useState, useCallback } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform, ActivityIndicator } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function Perfil({ navigation, usuario }) {
+export default function Perfil({ navigation }) {
 
-    console.log('(Perfil.js) Dados do usuário recebidos via props:', usuario);
+    // ESTADO LOCAL para guardar os dados do usuário
+    const [usuario, setUsuario] = useState(null);
 
-    const doLogoutAction = () => {
-        console.log("Usuário confirmou o logout. Tentando resetar a navegação...");
+    // useFocusEffect roda toda vez que a tela/aba "Perfil" ganha foco
+    // Isso é melhor que useEffect, pois atualiza se o usuário mudar de dados
+    useFocusEffect(
+        useCallback(() => {
+            const loadUserData = async () => {
+                try {
+                    const usuarioJSON = await AsyncStorage.getItem('usuario');
+                    if (usuarioJSON) {
+                        setUsuario(JSON.parse(usuarioJSON));
+                    }
+                } catch (e) {
+                    console.error("Erro ao carregar dados do usuário no Perfil", e);
+                    Alert.alert("Erro", "Não foi possível carregar os dados do perfil.");
+                }
+            };
+
+            loadUserData();
+        }, [])
+    );
+
+    const doLogoutAction = async () => {
+        console.log("Usuário confirmou o logout.");
         try {
+            // --- LINHA MAIS IMPORTANTE ---
+            // Limpa TODO o AsyncStorage (token, rol, usuario, etc.)
+            await AsyncStorage.clear();
+            // -----------------------------
+
+            console.log("AsyncStorage limpo. Resetando navegação...");
             navigation.getParent().reset({
                 index: 0,
                 routes: [{ name: 'Login' }],
             });
         } catch (e) {
-            console.error("Falha ao usar getParent().reset:", e);
-            console.log("Usando método de fallback: navigation.navigate('Login')");
-            navigation.navigate('Login');
+            console.error("Falha ao fazer logout:", e);
+            navigation.navigate('Login'); 
         }
     };
 
@@ -24,8 +52,6 @@ export default function Perfil({ navigation, usuario }) {
         if (Platform.OS === 'web') {
             if (window.confirm("Você tem certeza que deseja sair?")) {
                 doLogoutAction(); 
-            } else {
-                console.log("Logout cancelado");
             }
         } else {
             Alert.alert(
@@ -39,6 +65,14 @@ export default function Perfil({ navigation, usuario }) {
         }
     };
 
+    if (!usuario) {
+        return (
+            <View style={[Estilo.container, { justifyContent: 'center' }]}>
+                <ActivityIndicator size="large" color="#2480F9" />
+            </View>
+        );
+    }
+
     return (
         <View style={Estilo.container}>
             <View style={Estilo.mainContent}>
@@ -48,8 +82,8 @@ export default function Perfil({ navigation, usuario }) {
                         <Feather name="user" size={27} color="rgba(36, 128, 249, 0.8)" />
                     </View>
                     <View>
-                        <Text style={Estilo.topTitle}>{usuario ? usuario.nome : 'Usuário'}</Text>
-                        <Text style={Estilo.topSubtitle}>{usuario ? (usuario.rol === 'ADM' ? 'Administrador' : 'Usuário Padrão') : 'Carregando...'}</Text>
+                        <Text style={Estilo.topTitle}>{usuario.nome}</Text> 
+                        <Text style={Estilo.topSubtitle}>{usuario.rol === 'ADM' ? 'Administrador' : 'Usuário Padrão'}</Text>
                     </View>
                 </View>
 
@@ -57,7 +91,7 @@ export default function Perfil({ navigation, usuario }) {
                 <View style={Estilo.botoes}>
                     <TouchableOpacity
                         style={Estilo.button}
-                        onPress={() => navigation.navigate('AlterarSenha', { usuario: usuario })}
+                        onPress={() => navigation.navigate('AlterarSenha', { usuario: usuario })} 
                     >
                          <View style={Estilo.icon}>
                             <Feather name="key" size={25} color="rgba(36, 128, 249, 0.8)" />
@@ -81,7 +115,7 @@ export default function Perfil({ navigation, usuario }) {
                 </View>
             </View>
 
-            {/* Rodapé */}
+            {/* Rodapé (sem mudanças) */}
             <View style={Estilo.footer}>
                 <Text style={Estilo.textfooter}>© 2025 Sistema Positivo de Saúde</Text>
                 <Text style={Estilo.subtextfooter}>Todos os direitos reservados.</Text>

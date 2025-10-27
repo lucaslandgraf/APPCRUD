@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const pool = require('../../../db/mysqlConnect'); // Importe o pool para o cadastro
 const { enviarEmail, autenticarUsuario, recuperarSenhaService, alterarSenhaService } = require('../service/usuarioService');
 
+const jwt = require('jsonwebtoken');
+
 /**
  * CADASTRO DE USUÁRIO
  * Sempre salva a senha com hash bcrypt
@@ -36,7 +38,7 @@ async function cadastroUsuario(req, res) {
 
   } catch (error) {
     console.error("Erro ao cadastrar usuário:", error);
-    // Verifica se é um erro de e-mail duplicado (exemplo)
+    // Verifica se é um erro de e-mail duplicado
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ error: "Este e-mail já está cadastrado." });
     }
@@ -46,32 +48,44 @@ async function cadastroUsuario(req, res) {
 
 /**
  * LOGIN DE USUÁRIO
- * Retorna os dados do usuário (incluindo o 'rol') em caso de sucesso
+ * retornar um Token JWT
  */
 async function loginUsuario(req, res) {
-  const { email, senha } = req.body;
+  const { email, senha } = req.body;
 
-  if (!email || !senha) {
-    return res.status(400).json({ error: "Email ou senha não fornecidos" });
-  }
+  if (!email || !senha) {
+    return res.status(400).json({ error: "Email ou senha não fornecidos" });
+  }
 
-  try {
-    const usuario = await autenticarUsuario(email, senha);
+  try {
+    const usuario = await autenticarUsuario(email, senha);
 
-    res.status(200).json({ 
-      message: 'Login bem-sucedido', 
-      usuario: { 
-        id: usuario.id, 
-        nome: usuario.nome, 
-        email: usuario.email,
-        rol: usuario.rol
-      }
-    });
+    // --- GERAÇÃO DO TOKEN ---
+    const payload = {
+      id: usuario.id,
+      rol: usuario.rol // A permissão do usuário (ADM ou DEFAULT)
+    };
 
-  } catch (error) {
-    // Falha (usuário não encontrado ou senha errada)
-    res.status(401).json({ error: error.message || 'Credenciais inválidas' });
-  }
+    // Assina o token com a chave secreta do .env
+    const token = jwt.sign(
+      payload, 
+      process.env.JWT_SECRET, // Busca a chave do .env
+      { expiresIn: '8h' } // Define um tempo de expiração 
+    );
+
+    // Retorna o token e os dados para o Frontend
+    res.status(200).json({ 
+      message: 'Login bem-sucedido', 
+      token: token, // O token para o React guarda
+      usuario: { 
+        nome: usuario.nome, 
+        rol: usuario.rol
+      }
+    });
+
+  } catch (error) {
+    res.status(401).json({ error: error.message || 'Credenciais inválidas' });
+  }
 }
 
 async function recuperarSenha(req, res) {
@@ -97,13 +111,10 @@ async function alterarSenha(req, res) {
   if (!email || !senhaAtual || !novaSenha) {
     return res.status(400).json({ error: "Dados incompletos" });
   }
-
   try {
     const resultado = await alterarSenhaService(email, senhaAtual, novaSenha);
     res.status(200).json(resultado);
-
   } catch (error) {
-    // Envia o erro específico (ex: "Senha atual incorreta")
     res.status(401).json({ error: error.message });
   }
 }

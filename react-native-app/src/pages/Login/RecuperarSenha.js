@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-// ⚠️ ATENÇÃO: Use localhost para testes no NAVEGADOR (Edge)
 const API_URL = 'http://localhost:3000';
 
 export default function RecuperarSenha({ navigation }) {
@@ -25,7 +24,6 @@ export default function RecuperarSenha({ navigation }) {
 
             const data = await response.json();
 
-            // Mostra a mensagem de sucesso (sempre, por segurança)
             Alert.alert('Solicitação Enviada', data.message);
             navigation.goBack(); 
 

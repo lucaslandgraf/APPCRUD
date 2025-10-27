@@ -2,58 +2,60 @@ const express = require('express');
 const cors = require('cors');
 const pool = require('../db/mysqlConnect');
 const { cadastroUsuario, loginUsuario, recuperarSenha, alterarSenha } = require('../modules/acesso/controller/usuarioController');
+const { listarAlunos, cadastrarAluno, excluirAluno, atualizarAluno } = require('../modules/alunos/controller/alunoController');
+const { checkAuth, checkRole } = require('../middlewares/authMiddleware');
 
 const app = express();
 
 // Midlewares básicos
-
 app.use(cors());
-app.use(express.json()); // Permitir que recebamos JSON nas requisições
+app.use(express.json()); 
 
 app.get("/", async (req, res) => {
     res.json({status: "Ok"});
 });
 
-// Get em carros
-
-app.get("/getpaciente", async (req, res) => {
+// --- ROTA /getpaciente
+app.get("/getpaciente", checkAuth, checkRole(['DEFAULT', 'ADM']), async (req, res) => {
     try{
         const [rows] = await pool.execute('SELECT * FROM paciente;');
-        res.status(202).json(rows);
+        res.status(200).json(rows);
+
     } catch (error){
         console.error("Erro ao realizar a consulta", error);
+        res.status(500).json({ error: "Erro interno ao buscar pacientes." });
     }    
 })
 
-/* app.post("/insertcar", async (req, res) =>{
-    try{
-        const { pmarca, pmodelo } = req.body;
-        if(!pmarca || pmodelo == null){
-            return res.status(400).json({error: true, message: "Marca ou modelo não foi informado"});
-        }
-
-        const [result] = await pool.execute('INSERT INTO carro(marca, modelo) VALUES(?, ?)', [pmarca, pmodelo]);
-
-        console.log(result);
-
-        if(result.affectedRows > 0){
-            res.status(201).json({error: false, message: "Carro inserido"});
-        }else{
-            res.status(400).json({error: true, message: "Carro não inserido"});
-        }
-
-    }catch(error){
-        console.error("Erro ao inserir", error)
-    }
-}) */
+// --- ROTAS DE ACESSO ---
 
 app.post('/cadastro', cadastroUsuario);
 app.post('/login', loginUsuario);
 app.post('/recuperar-senha', recuperarSenha);
-
-// 2. ADICIONE A NOVA ROTA:
 app.post('/alterar-senha', alterarSenha);
+
+app.get('/alunos',     checkAuth, checkRole(['ADM']), listarAlunos);
+app.post('/alunos',    checkAuth, checkRole(['ADM']), cadastrarAluno);
+app.delete('/alunos/:id', checkAuth, checkRole(['ADM']), excluirAluno);
+app.put('/alunos/:id',    checkAuth, checkRole(['ADM']), atualizarAluno);
+
+
+/*
+const { listarPacientes, cadastrarPaciente } = require('../modules/pacientes/controller/pacienteController');
+const { listarAgendamentos } = require('../modules/agendamentos/controller/agendamentoController');
+const { gerarRelatorio } = require('../modules/relatorios/controller/relatorioController');
+
+// Pacientes
+app.get('/pacientes',     checkAuth, checkRole(['DEFAULT', 'ADM']), listarPacientes);
+app.post('/pacientes',    checkAuth, checkRole(['DEFAULT', 'ADM']), cadastrarPaciente);
+
+// Agendamentos
+app.get('/agendamentos', checkAuth, checkRole(['DEFAULT', 'ADM']), listarAgendamentos);
+
+// Relatórios
+app.get('/relatorios',    checkAuth, checkRole(['DEFAULT', 'ADM']), gerarRelatorio);
+*/
+
 
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
-
