@@ -113,7 +113,7 @@ export default function RelatorioPaciente({ navigation }) {
                 <TouchableOpacity onPress={handleGoBack} style={Estilo.backButton}>
                     <Text style={Estilo.backButtonText}>← Voltar</Text>
                 </TouchableOpacity>
-                <Text style={Estilo.headerTitle}>Relatório de Exames</Text>
+                <Text style={Estilo.headerTitle}>Relatório de Pacientes</Text>
             </View>
 
             <FlatList
