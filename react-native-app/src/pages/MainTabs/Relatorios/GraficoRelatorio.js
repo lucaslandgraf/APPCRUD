@@ -7,7 +7,7 @@ import {
     TouchableOpacity, 
     StyleSheet, 
     StatusBar, 
-    Image, // 1. Componente Image importado
+    Image,
 } from 'react-native';
 
 const GraficoExemplo = require('../../../images/grafico-exemplo.png');
@@ -32,7 +32,6 @@ export default function GraficoRelatorio({ navigation }) {
             
             {/* conteúdo dos gráficos */}
             <View style={Estilo.content}>
-                {/* 3. Imagem adicionada */}
                 <Text style={Estilo.chartTitle}>Visualização de Dados (Exemplo)</Text>
                 <Image 
                     source={GraficoExemplo} 
@@ -74,7 +73,7 @@ const Estilo = StyleSheet.create({
 
     content: {
         flex: 1,
-        justifyContent: 'flex-start', // Alterado para manter o conteúdo no topo
+        justifyContent: 'flex-start', 
         alignItems: 'center',
         padding: 20,
     },
@@ -86,11 +85,10 @@ const Estilo = StyleSheet.create({
         marginBottom: 15,
     },
 
-    // Estilo para a imagem do gráfico
     graficoImage: {
-        width: '100%', // Largura total da área de conteúdo
-        height: 300,  // Altura fixa para visualização
-        backgroundColor: '#fff', // Fundo branco para simular o gráfico
+        width: '100%', 
+        height: 300,  
+        backgroundColor: '#fff', 
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#e9ecef',
