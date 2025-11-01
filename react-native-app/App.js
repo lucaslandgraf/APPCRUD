@@ -11,6 +11,7 @@ import Funcionalidades from './src/pages/MainTabs/Funcionalidades/Funcionalidade
 import Perfil from './src/pages/MainTabs/Perfil/Perfil';
 import AlterarSenha from './src/pages/MainTabs/Perfil/AlterarSenha';
 import Paciente from './src/pages/MainTabs/Paciente/Paciente';
+import EditarPaciente from './src/pages/MainTabs/Paciente/EditarPaciente';
 import Exames from './src/pages/MainTabs/Exames/Exame';
 import Alunos from './src/pages/MainTabs/Alunos/Alunos';
 import ListagemAlunos from './src/pages/MainTabs/Alunos/ListagemAlunos';
@@ -82,6 +83,7 @@ export default function App() {
                 <Stack.Screen name="Pacientes" component={Paciente}/>
                 <Stack.Screen name="CadastroPacientes" component={CadastroPacientes}/>
                 <Stack.Screen name="ListagemPacientes" component={ListaPacientes}/>
+                <Stack.Screen name="EditarPaciente" component={EditarPaciente}/>
                 <Stack.Screen name="Exames" component={Exames}/>
                 <Stack.Screen name="CadastroExames" component={CadastroExames}/>
                 <Stack.Screen name="ListagemExames" component={ListagemExames}/>

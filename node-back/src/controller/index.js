@@ -1,8 +1,11 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const pool = require('../db/mysqlConnect');
 const { cadastroUsuario, loginUsuario, recuperarSenha, alterarSenha } = require('../modules/acesso/controller/usuarioController');
 const { listarAlunos, cadastrarAluno, excluirAluno, atualizarAluno } = require('../modules/alunos/controller/alunoController');
+const { listarPacientes, criarPaciente, atualizarPaciente, obterPaciente, deletarPaciente } = require('../modules/paciente/controller/PacienteController')
 const { checkAuth, checkRole } = require('../middlewares/authMiddleware');
 
 const app = express();
@@ -39,16 +42,11 @@ app.post('/alunos',    checkAuth, checkRole(['ADM']), cadastrarAluno);
 app.delete('/alunos/:id', checkAuth, checkRole(['ADM']), excluirAluno);
 app.put('/alunos/:id',    checkAuth, checkRole(['ADM']), atualizarAluno);
 
+app.get('/pacientes',     checkAuth, checkRole(['DEFAULT', 'ADM']), listarPacientes);
+app.post('/pacientes',    checkAuth, checkRole(['DEFAULT', 'ADM']), criarPaciente);
+app.delete('/pacientes/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), deletarPaciente);
 
 /*
-const { listarPacientes, cadastrarPaciente } = require('../modules/pacientes/controller/pacienteController');
-const { listarAgendamentos } = require('../modules/agendamentos/controller/agendamentoController');
-const { gerarRelatorio } = require('../modules/relatorios/controller/relatorioController');
-
-// Pacientes
-app.get('/pacientes',     checkAuth, checkRole(['DEFAULT', 'ADM']), listarPacientes);
-app.post('/pacientes',    checkAuth, checkRole(['DEFAULT', 'ADM']), cadastrarPaciente);
-
 // Agendamentos
 app.get('/agendamentos', checkAuth, checkRole(['DEFAULT', 'ADM']), listarAgendamentos);
 

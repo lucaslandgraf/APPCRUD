@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
@@ -9,23 +9,31 @@ import {
   StyleSheet,
   StatusBar,
   Alert,
-  Platform,
 } from 'react-native';
 
-// API_URL Universal
-const API_URL = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://192.168.100.119:3000'; // Ajuste para seu IP
+const API_URL = 'http://192.168.X.X:3000'; // Ajuste para seu backend
 
-export default function CadastroPacientes({ navigation, route }) {
-  // Se estiver editando, os dados vêm de route.params.paciente
-  const editarPaciente = route?.params?.paciente || null;
+export default function EditarPaciente({ navigation, route }) {
+  const paciente = route.params?.paciente;
 
-  const [nome, setNome] = useState(editarPaciente ? editarPaciente.nome : '');
-  const [dataNascimento, setDataNascimento] = useState(editarPaciente ? editarPaciente.data_nascimento : '');
-  const [endereco, setEndereco] = useState(editarPaciente ? editarPaciente.endereco : '');
-  const [telefone, setTelefone] = useState(editarPaciente ? editarPaciente.telefone : '');
-  const [cpf, setCpf] = useState(editarPaciente ? editarPaciente.CPF : '');
-  const [observacoes, setObservacoes] = useState(editarPaciente ? editarPaciente.observacoes : '');
+  const [nome, setNome] = useState('');
+  const [dataNascimento, setDataNascimento] = useState('');
+  const [endereco, setEndereco] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [observacoes, setObservacoes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (paciente) {
+      setNome(paciente.nome || '');
+      setDataNascimento(paciente.data_nascimento || '');
+      setEndereco(paciente.endereco || '');
+      setTelefone(paciente.telefone || '');
+      setCpf(paciente.CPF || '');
+      setObservacoes(paciente.observacoes || '');
+    }
+  }, [paciente]);
 
   const handleGoBack = () => {
     navigation.goBack();
@@ -33,7 +41,7 @@ export default function CadastroPacientes({ navigation, route }) {
 
   const handleSave = async () => {
     if (!nome || !dataNascimento || !endereco || !telefone || !cpf) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
+      Alert.alert('Erro', 'Preencha todos os campos obrigatórios.');
       return;
     }
 
@@ -49,31 +57,20 @@ export default function CadastroPacientes({ navigation, route }) {
     };
 
     try {
-      let response;
-      if (editarPaciente) {
-        // Atualizar paciente
-        response = await fetch(`${API_URL}/pacientes/${editarPaciente.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pacienteData),
-        });
-      } else {
-        // Criar novo paciente
-        response = await fetch(`${API_URL}/pacientes`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pacienteData),
-        });
-      }
+      const response = await fetch(`${API_URL}/pacientes/${paciente.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pacienteData),
+      });
 
       const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao salvar paciente.');
+        throw new Error(data.error || 'Erro ao atualizar paciente.');
       }
 
-      Alert.alert('Sucesso', editarPaciente ? 'Paciente atualizado!' : 'Paciente cadastrado!');
+      Alert.alert('Sucesso', 'Paciente atualizado!');
       navigation.goBack();
-
     } catch (error) {
       Alert.alert('Erro', error.message);
     } finally {
@@ -84,18 +81,15 @@ export default function CadastroPacientes({ navigation, route }) {
   return (
     <SafeAreaView style={Estilo.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      
-      {/* Header */}
+
       <View style={Estilo.header}>
         <TouchableOpacity onPress={handleGoBack} style={Estilo.backButton}>
           <Text style={Estilo.backButtonText}>{'<-'} Voltar</Text>
         </TouchableOpacity>
-        <Text style={Estilo.headerTitle}>
-          {editarPaciente ? 'Editar Paciente' : 'Cadastro de Paciente'}
-        </Text>
+        <Text style={Estilo.headerTitle}>Editar Paciente</Text>
       </View>
 
-      <ScrollView style={Estilo.content}>        
+      <ScrollView style={Estilo.content}>
         <Text style={Estilo.label}>Nome *</Text>
         <TextInput
           style={Estilo.input}
@@ -157,7 +151,7 @@ export default function CadastroPacientes({ navigation, route }) {
           disabled={isLoading}
         >
           <Text style={Estilo.saveButtonText}>
-            {isLoading ? 'Salvando...' : editarPaciente ? 'Atualizar Paciente' : 'Salvar Paciente'}
+            {isLoading ? 'Salvando...' : 'Atualizar Paciente'}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -166,10 +160,7 @@ export default function CadastroPacientes({ navigation, route }) {
 }
 
 const Estilo = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
   header: {
     backgroundColor: '#ffffff',
     flexDirection: 'row',
@@ -179,23 +170,10 @@ const Estilo = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
   },
-  backButton: {
-    marginRight: 10,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#4285f4',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#212529',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
+  backButton: { marginRight: 10 },
+  backButtonText: { fontSize: 16, color: '#4285f4' },
+  headerTitle: { fontSize: 24, fontWeight: '600', color: '#212529' },
+  content: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
   label: {
     fontSize: 16,
     fontWeight: '500',
@@ -220,12 +198,6 @@ const Estilo = StyleSheet.create({
     marginTop: 30,
     marginBottom: 20,
   },
-  saveButtonDisabled: {
-    backgroundColor: '#a3d9a5',
-  },
-  saveButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
+  saveButtonDisabled: { backgroundColor: '#a3d9a5' },
+  saveButtonText: { color: '#ffffff', fontSize: 18, fontWeight: '600' },
 });
