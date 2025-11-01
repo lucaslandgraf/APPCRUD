@@ -22,11 +22,11 @@ db.connect(err => {
   console.log('Conectado ao banco de dados!');
 });
 
-// CRUD para tabela paciente
+// CRUD para tabela agendamento
 
-// Ler todos os pacientes
-app.get('/pacientes', (req, res) => {
-  const query = 'SELECT * FROM paciente';
+// Ler todos os agendamentos
+app.get('/agendamentos', (req, res) => {
+  const query = 'SELECT * FROM agendamento';
   db.query(query, (err, results) => {
     if (err) {
       res.status(500).json({ error: 'Erro interno no servidor' });
@@ -36,76 +36,76 @@ app.get('/pacientes', (req, res) => {
   });
 });
 
-// Ler um paciente pelo id
-app.get('/paciente/:id', (req, res) => {
+// Ler um agendamento pelo id
+app.get('/agendamento/:id', (req, res) => {
   const { id } = req.params;
-  const query = 'SELECT * FROM paciente WHERE id = ?';
+  const query = 'SELECT * FROM agendamento WHERE id = ?';
   db.query(query, [id], (err, results) => {
     if (err) {
       res.status(500).json({ error: 'Erro interno no servidor' });
       return;
     }
     if (results.length === 0) {
-      res.status(404).json({ error: 'Paciente não encontrado' });
+      res.status(404).json({ error: 'Agendamento não encontrado' });
       return;
     }
     res.json(results[0]);
   });
 });
 
-// Criar um novo paciente
-app.post('/paciente', (req, res) => {
-  const { nome, data_nascimento, endereco, telefone, CPF, observacoes } = req.body;
-  if (!nome || !data_nascimento || !endereco || !telefone || !CPF) {
-    res.status(400).json({ error: 'Dados incompletos para criar paciente' });
+// Criar um novo agendamento
+app.post('/agendamento', (req, res) => {
+  const { paciente_id, data_consulta, tipo_exame } = req.body;
+  if (!paciente_id || !data_consulta || !tipo_exame) {
+    res.status(400).json({ error: 'Dados incompletos para criar agendamento' });
     return;
   }
-  const query = 'INSERT INTO paciente (nome, data_nascimento, endereco, telefone, CPF, observacoes) VALUES (?, ?, ?, ?, ?, ?)';
-  db.query(query, [nome, data_nascimento, endereco, telefone, CPF, observacoes || null], (err, result) => {
+  const query = 'INSERT INTO agendamento (paciente_id, data_consulta, tipo_exame) VALUES (?, ?, ?)';
+  db.query(query, [paciente_id, data_consulta, tipo_exame], (err, result) => {
     if (err) {
-      res.status(500).json({ error: 'Erro ao criar paciente' });
+      res.status(500).json({ error: 'Erro ao criar agendamento' });
       return;
     }
-    res.status(201).json({ message: 'Paciente criado', id: result.insertId });
+    res.status(201).json({ message: 'Agendamento criado', id: result.insertId });
   });
 });
 
-// Atualizar um paciente pelo id
-app.put('/paciente/:id', (req, res) => {
+// Atualizar um agendamento pelo id
+app.put('/agendamento/:id', (req, res) => {
   const { id } = req.params;
-  const { nome, data_nascimento, endereco, telefone, CPF, observacoes } = req.body;
-  if (!nome || !data_nascimento || !endereco || !telefone || !CPF) {
-    res.status(400).json({ error: 'Dados incompletos para atualizar paciente' });
+  const { paciente_id, data_consulta, tipo_exame } = req.body;
+  if (!paciente_id || !data_consulta || !tipo_exame) {
+    res.status(400).json({ error: 'Dados incompletos para atualizar agendamento' });
     return;
   }
-  const query = 'UPDATE paciente SET nome = ?, data_nascimento = ?, endereco = ?, telefone = ?, CPF = ?, observacoes = ? WHERE id = ?';
-  db.query(query, [nome, data_nascimento, endereco, telefone, CPF, observacoes || null, id], (err, result) => {
+  const query = 'UPDATE agendamento SET paciente_id = ?, data_consulta = ?, tipo_exame = ? WHERE id = ?';
+  db.query(query, [paciente_id, data_consulta, tipo_exame, id], (err, result) => {
     if (err) {
-      res.status(500).json({ error: 'Erro ao atualizar paciente' });
+      res.status(500).json({ error: 'Erro ao atualizar agendamento' });
       return;
     }
     if (result.affectedRows === 0) {
-      res.status(404).json({ error: 'Paciente não encontrado' });
+      res.status(404).json({ error: 'Agendamento não encontrado' });
       return;
     }
-    res.json({ message: 'Paciente atualizado' });
+    res.json({ message: 'Agendamento atualizado' });
   });
 });
 
-// Deletar um paciente pelo id
-app.delete('/paciente/:id', (req, res) => {
+// Deletar um agendamento pelo id
+app.delete('/agendamento/:id', (req, res) => {
   const { id } = req.params;
-  const query = 'DELETE FROM paciente WHERE id = ?';
+  const query = 'DELETE FROM agendamento WHERE id = ?';
   db.query(query, [id], (err, result) => {
     if (err) {
-      res.status(500).json({ error: 'Erro ao deletar paciente' });
+      res.status(500).json({ error: 'Erro ao deletar agendamento' });
       return;
     }
     if (result.affectedRows === 0) {
-      res.status(404).json({ error: 'Paciente não encontrado' });
+      res.status(404).json({ error: 'Agendamento não encontrado' });
       return;
     }
-    res.json({ message: 'Paciente deletado' });
+    res.json({ message: 'Agendamento deletado' });
   });
 });
 

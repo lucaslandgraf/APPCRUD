@@ -1,114 +1,90 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const mysql = require('mysql');
-const app = express();
-const port = 3000;
+const pool = require('../../../db/mysqlConnect'); // importar pool de conexão
 
-app.use(bodyParser.json());
-
-// Configuração da conexão com o banco de dados
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '', // colocar a senha do seu banco MySQL aqui
-  database: 'seu_banco_de_dados'
-});
-
-db.connect(err => {
-  if (err) {
-    console.error('Erro ao conectar ao banco de dados:', err);
-    return;
+// Listar todos agendamentos
+async function listarAgendamentos(req, res) {
+  try {
+    const [rows] = await pool.execute('SELECT * FROM agendamento');
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Erro ao listar agendamentos:', error);
+    res.status(500).json({ error: 'Erro interno ao listar agendamentos' });
   }
-  console.log('Conectado ao banco de dados!');
-});
+}
 
-// CRUD para tabela agendamento
-
-// Ler todos os agendamentos
-app.get('/agendamentos', (req, res) => {
-  const query = 'SELECT * FROM agendamento';
-  db.query(query, (err, results) => {
-    if (err) {
-      res.status(500).json({ error: 'Erro interno no servidor' });
-      return;
-    }
-    res.json(results);
-  });
-});
-
-// Ler um agendamento pelo id
-app.get('/agendamento/:id', (req, res) => {
+// Obter agendamento por ID
+async function obterAgendamento(req, res) {
   const { id } = req.params;
-  const query = 'SELECT * FROM agendamento WHERE id = ?';
-  db.query(query, [id], (err, results) => {
-    if (err) {
-      res.status(500).json({ error: 'Erro interno no servidor' });
-      return;
+  try {
+    const [rows] = await pool.execute('SELECT * FROM agendamento WHERE id = ?', [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Agendamento não encontrado' });
     }
-    if (results.length === 0) {
-      res.status(404).json({ error: 'Agendamento não encontrado' });
-      return;
-    }
-    res.json(results[0]);
-  });
-});
+    res.status(200).json(rows[0]);
+  } catch (error) {
+    console.error('Erro ao obter agendamento:', error);
+    res.status(500).json({ error: 'Erro interno ao obter agendamento' });
+  }
+}
 
-// Criar um novo agendamento
-app.post('/agendamento', (req, res) => {
+// Criar novo agendamento
+async function criarAgendamento(req, res) {
   const { paciente_id, data_consulta, tipo_exame } = req.body;
   if (!paciente_id || !data_consulta || !tipo_exame) {
-    res.status(400).json({ error: 'Dados incompletos para criar agendamento' });
-    return;
+    return res.status(400).json({ error: 'Dados incompletos para criar agendamento' });
   }
-  const query = 'INSERT INTO agendamento (paciente_id, data_consulta, tipo_exame) VALUES (?, ?, ?)';
-  db.query(query, [paciente_id, data_consulta, tipo_exame], (err, result) => {
-    if (err) {
-      res.status(500).json({ error: 'Erro ao criar agendamento' });
-      return;
-    }
+  try {
+    const [result] = await pool.execute(
+      'INSERT INTO agendamento (paciente_id, data_consulta, tipo_exame) VALUES (?, ?, ?)',
+      [paciente_id, data_consulta, tipo_exame]
+    );
     res.status(201).json({ message: 'Agendamento criado', id: result.insertId });
-  });
-});
+  } catch (error) {
+    console.error('Erro ao criar agendamento:', error);
+    res.status(500).json({ error: 'Erro interno ao criar agendamento' });
+  }
+}
 
-// Atualizar um agendamento pelo id
-app.put('/agendamento/:id', (req, res) => {
+// Atualizar agendamento pelo ID
+async function atualizarAgendamento(req, res) {
   const { id } = req.params;
   const { paciente_id, data_consulta, tipo_exame } = req.body;
   if (!paciente_id || !data_consulta || !tipo_exame) {
-    res.status(400).json({ error: 'Dados incompletos para atualizar agendamento' });
-    return;
+    return res.status(400).json({ error: 'Dados incompletos para atualizar agendamento' });
   }
-  const query = 'UPDATE agendamento SET paciente_id = ?, data_consulta = ?, tipo_exame = ? WHERE id = ?';
-  db.query(query, [paciente_id, data_consulta, tipo_exame, id], (err, result) => {
-    if (err) {
-      res.status(500).json({ error: 'Erro ao atualizar agendamento' });
-      return;
-    }
+  try {
+    const [result] = await pool.execute(
+      'UPDATE agendamento SET paciente_id = ?, data_consulta = ?, tipo_exame = ? WHERE id = ?',
+      [paciente_id, data_consulta, tipo_exame, id]
+    );
     if (result.affectedRows === 0) {
-      res.status(404).json({ error: 'Agendamento não encontrado' });
-      return;
+      return res.status(404).json({ error: 'Agendamento não encontrado' });
     }
-    res.json({ message: 'Agendamento atualizado' });
-  });
-});
+    res.status(200).json({ message: 'Agendamento atualizado' });
+  } catch (error) {
+    console.error('Erro ao atualizar agendamento:', error);
+    res.status(500).json({ error: 'Erro interno ao atualizar agendamento' });
+  }
+}
 
-// Deletar um agendamento pelo id
-app.delete('/agendamento/:id', (req, res) => {
+// Deletar agendamento pelo ID
+async function deletarAgendamento(req, res) {
   const { id } = req.params;
-  const query = 'DELETE FROM agendamento WHERE id = ?';
-  db.query(query, [id], (err, result) => {
-    if (err) {
-      res.status(500).json({ error: 'Erro ao deletar agendamento' });
-      return;
-    }
+  try {
+    const [result] = await pool.execute('DELETE FROM agendamento WHERE id = ?', [id]);
     if (result.affectedRows === 0) {
-      res.status(404).json({ error: 'Agendamento não encontrado' });
-      return;
+      return res.status(404).json({ error: 'Agendamento não encontrado' });
     }
-    res.json({ message: 'Agendamento deletado' });
-  });
-});
+    res.status(200).json({ message: 'Agendamento deletado' });
+  } catch (error) {
+    console.error('Erro ao deletar agendamento:', error);
+    res.status(500).json({ error: 'Erro interno ao deletar agendamento' });
+  }
+}
 
-app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
-});
+module.exports = {
+  listarAgendamentos,
+  obterAgendamento,
+  criarAgendamento,
+  atualizarAgendamento,
+  deletarAgendamento
+};
