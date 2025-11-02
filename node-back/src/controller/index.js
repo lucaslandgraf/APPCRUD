@@ -8,7 +8,10 @@ const { listarAlunos, cadastrarAluno, excluirAluno, atualizarAluno } = require('
 const { listarPacientes, criarPaciente, atualizarPaciente, obterPaciente, deletarPaciente } = require('../modules/paciente/controller/PacienteController')
 const { listarAgendamentos, deletarAgendamento, criarAgendamento, atualizarAgendamento, obterAgendamento } = require('../modules/agendamento/controller/AgendamentoController');
 const { listarTodosExames, criarExameCovid19, criarExameDengue, criarExameAbo, listarExameCovid19, listarExameAbo, listarExameDengue } = require('../modules/exames/controller/ExamesController');
+const { gerarRelatorioGeral } = require('../modules/relatorio/controller/relatorioController');
+const { getDashboardStats } = require('../modules/dashboard/controller/dashboardController'); 
 const { checkAuth, checkRole } = require('../middlewares/authMiddleware');
+
 
 const app = express();
 
@@ -17,20 +20,22 @@ app.use(cors());
 app.use(express.json()); 
 
 app.get("/", async (req, res) => {
-    res.json({status: "Ok"});
+    res.json({status: "Ok"});
 });
 
-// --- ROTA /getpaciente
+// ROTA /getpaciente
 app.get("/getpaciente", checkAuth, checkRole(['DEFAULT', 'ADM']), async (req, res) => {
-    try{
-        const [rows] = await pool.execute('SELECT * FROM paciente;');
-        res.status(200).json(rows);
+    try{
+        const [rows] = await pool.execute('SELECT * FROM paciente;');
+        res.status(200).json(rows);
 
-    } catch (error){
-        console.error("Erro ao realizar a consulta", error);
-        res.status(500).json({ error: "Erro interno ao buscar pacientes." });
-    }    
+    } catch (error){
+        console.error("Erro ao realizar a consulta", error);
+        res.status(500).json({ error: "Erro interno ao buscar pacientes." });
+    }    
 })
+
+app.get('/dashboard-stats', checkAuth, checkRole(['DEFAULT', 'ADM']), getDashboardStats); // <<< NOVA LINHA
 
 // --- ROTAS DE ACESSO ---
 
@@ -50,14 +55,12 @@ app.post('/pacientes', checkAuth, checkRole(['DEFAULT', 'ADM']), criarPaciente);
 app.delete('/pacientes/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), deletarPaciente);
 app.put('/pacientes/:id', checkAuth, checkRole(['ADM']), atualizarPaciente)
 
-
 // Agendamentos
 app.post('/agendamentos', checkAuth, checkRole(['ADM']), criarAgendamento);
 app.get('/agendamentos', checkAuth, checkRole(['DEFAULT', 'ADM']), listarAgendamentos);
 app.delete('/agendamentos/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), deletarAgendamento);
 app.get('/agendamentos/:id', checkAuth, checkRole(['ADM']), obterAgendamento);
 app.put('/agendamentos/:id', checkAuth, checkRole(['ADM']), atualizarAgendamento);
-
 
 app.get('/exames', checkAuth, checkRole(['DEFAULT', 'ADM']), listarTodosExames);
 app.post('/exames/covid', criarExameCovid19);
@@ -67,11 +70,8 @@ app.get('/exames/covid', listarExameCovid19);
 app.get('/exames/dengue', listarExameDengue);
 app.get('/exames/abo', listarExameAbo);
 
-/*
-// Relatórios
-app.get('/relatorios',    checkAuth, checkRole(['DEFAULT', 'ADM']), gerarRelatorio);
-*/
-
+// ROTA DE RELATÓRIOS
+app.get('/relatorios', checkAuth, checkRole(['DEFAULT', 'ADM']), gerarRelatorioGeral);
 
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));

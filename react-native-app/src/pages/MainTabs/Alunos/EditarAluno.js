@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Alert, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Alert } from 'react-native'; // Platform não é mais necessário
 import { Picker } from '@react-native-picker/picker';
 
-const API_URL = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://192.168.15.7:3000';
+import api from '../../../services/api'; // Importa o api.js
 
 export default function EditarAluno({ navigation, route }) {
     const alunoParaEditar = route.params?.aluno;
 
-    // Estados pré-preenchidos com os dados do aluno
     const [nome, setNome] = useState(alunoParaEditar?.nome || '');
     const [email, setEmail] = useState(alunoParaEditar?.email || '');
     const [tipoUsuario, setTipoUsuario] = useState(alunoParaEditar?.rol || 'DEFAULT');
     const [isLoading, setIsLoading] = useState(false);
 
-    // Se não recebeu dados do aluno, volta pra trás
     useEffect(() => {
         if (!alunoParaEditar) {
             Alert.alert('Erro', 'Dados do aluno não encontrados.');
@@ -33,19 +31,21 @@ export default function EditarAluno({ navigation, route }) {
         const dadosAtualizados = { nome, email, rol: tipoUsuario };
 
         try {
-            const response = await fetch(`${API_URL}/alunos/${alunoParaEditar.id}`, { 
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dadosAtualizados),
-            });
-            const data = await response.json();
-            if (!response.ok) { throw new Error(data.error || 'Erro ao atualizar aluno'); }
-
-            Alert.alert('Sucesso', 'Aluno atualizado com sucesso!');
+            const response = await api.put(`/alunos/${alunoParaEditar.id}`, dadosAtualizados);
+            const data = response.data;
+            Alert.alert('Sucesso', data.message || 'Aluno atualizado com sucesso!');
             navigation.goBack();
 
-        } catch (error) { Alert.alert('Erro ao Atualizar', error.message); }
-        finally { setIsLoading(false); }
+        } catch (error) {
+            // Tratamento de erro do Axios
+            let errorMessage = error.message;
+            if (error.response && error.response.data && error.response.data.error) {
+                errorMessage = error.response.data.error;
+            }
+            Alert.alert('Erro ao Atualizar', errorMessage);
+        } finally { 
+            setIsLoading(false); 
+        }
     };
 
     if (!alunoParaEditar) return null; 

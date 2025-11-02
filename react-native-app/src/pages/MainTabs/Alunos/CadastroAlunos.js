@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Alert, Platform
+  View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Alert
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker'; // Importa o Picker
 
-// API_URL Universal
-const API_URL = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://192.168.15.7:3000'; // Ajuste o IP se necessário
+import api from '../../../services/api'; 
 
 export default function CadastroAlunos({ navigation }) {
   const [nome, setNome] = useState('');
@@ -28,19 +27,23 @@ export default function CadastroAlunos({ navigation }) {
     const novoAluno = { nome, email, senha, rol: tipoUsuario };
 
     try {
-      const response = await fetch(`${API_URL}/alunos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(novoAluno),
-      });
-      const data = await response.json();
-      if (!response.ok) { throw new Error(data.error || 'Erro ao cadastrar aluno'); }
+        const response = await api.post('/alunos', novoAluno);
+        const data = response.data;
 
-      Alert.alert('Sucesso', 'Aluno cadastrado com sucesso!');
-      setNome(''); setEmail(''); setTipoUsuario('DEFAULT'); setSenha(''); setConfirmarSenha('');
-      navigation.goBack();
-    } catch (error) { Alert.alert('Erro de Cadastro', error.message); }
-    finally { setIsLoading(false); }
+        Alert.alert('Sucesso', data.status || 'Aluno cadastrado com sucesso!');
+        setNome(''); setEmail(''); setTipoUsuario('DEFAULT'); setSenha(''); setConfirmarSenha('');
+        navigation.goBack();
+
+    } catch (error) {
+        // Tratamento de erro do Axios
+        let errorMessage = error.message;
+        if (error.response && error.response.data && error.response.data.error) {
+            errorMessage = error.response.data.error;
+        }
+        Alert.alert('Erro de Cadastro', errorMessage);
+    } finally { 
+        setIsLoading(false); 
+    }
   };
 
   return (
