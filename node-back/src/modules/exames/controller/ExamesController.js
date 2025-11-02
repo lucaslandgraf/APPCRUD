@@ -1,5 +1,27 @@
 const pool = require('../../../db/mysqlConnect'); // importar pool de conexão
 
+async function listarTodosExames(req, res) {
+  try {
+    // Consultas paralelas
+    const [dengue] = await pool.execute('SELECT * FROM exame_dengue');
+    const [abo] = await pool.execute('SELECT * FROM exame_abo');
+    const [covid] = await pool.execute('SELECT * FROM exame_covid_19');
+
+    // Adiciona o campo tipo para diferenciar
+    const exames = [
+      ...dengue.map(e => ({ ...e, tipo: 'Dengue' })),
+      ...abo.map(e => ({ ...e, tipo: 'ABO' })),
+      ...covid.map(e => ({ ...e, tipo: 'Covid' })),
+    ];
+
+    res.status(200).json(exames);
+  } catch (error) {
+    console.error('Erro ao listar todos exames:', error);
+    res.status(500).json({ error: 'Erro interno ao listar exames' });
+  }
+}
+
+
 // ----- exame_abo -----
 
 async function listarExameAbo(req, res) {
@@ -245,5 +267,6 @@ module.exports = {
   obterExameDengue,
   criarExameDengue,
   atualizarExameDengue,
-  deletarExameDengue
+  deletarExameDengue,
+  listarTodosExames
 };

@@ -7,6 +7,7 @@ const { cadastroUsuario, loginUsuario, recuperarSenha, alterarSenha } = require(
 const { listarAlunos, cadastrarAluno, excluirAluno, atualizarAluno } = require('../modules/alunos/controller/alunoController');
 const { listarPacientes, criarPaciente, atualizarPaciente, obterPaciente, deletarPaciente } = require('../modules/paciente/controller/PacienteController')
 const { listarAgendamentos, deletarAgendamento, criarAgendamento, atualizarAgendamento, obterAgendamento } = require('../modules/agendamento/controller/AgendamentoController');
+const { listarTodosExames, criarExameCovid19, criarExameDengue, criarExameAbo, listarExameCovid19, listarExameAbo, listarExameDengue } = require('../modules/exames/controller/ExamesController');
 const { checkAuth, checkRole } = require('../middlewares/authMiddleware');
 
 const app = express();
@@ -57,6 +58,14 @@ app.delete('/agendamentos/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), deleta
 app.get('/agendamentos/:id', checkAuth, checkRole(['ADM']), obterAgendamento);
 app.put('/agendamentos/:id', checkAuth, checkRole(['ADM']), atualizarAgendamento);
 
+
+app.get('/exames', checkAuth, checkRole(['DEFAULT', 'ADM']), listarTodosExames);
+app.post('/exames/covid', criarExameCovid19);
+app.post('/exames/dengue', criarExameDengue);
+app.post('/exames/abo', criarExameAbo);
+app.get('/exames/covid', listarExameCovid19);
+app.get('/exames/dengue', listarExameDengue);
+app.get('/exames/abo', listarExameAbo);
 
 /*
 // Relatórios

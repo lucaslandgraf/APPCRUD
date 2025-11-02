@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
@@ -9,54 +9,48 @@ import {
   StyleSheet,
   StatusBar,
   Alert,
+  ActivityIndicator
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../../services/api';
 import { Feather } from "@expo/vector-icons";
 
 export default function CadastroAgendamento({ navigation }) {
-  // Alterado de 'paciente' para 'paciente_cpf' para refletir o novo foco
-  const [paciente_cpf, setPacienteCpf] = useState(""); 
+  const [paciente_cpf, setPacienteCpf] = useState("");
   const [data, setData] = useState("");
   const [tipoExame, setTipoExame] = useState("");
   const [descricao, setDescricao] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Função para formatar o CPF (opcional, mas melhora a UX)
+  const [exameDropdownOpen, setExameDropdownOpen] = useState(false);
+  const exames = [
+    { id: 1, nome: 'dengue' },
+    { id: 2, nome: 'covid' },
+    { id: 3, nome: 'abo' }
+  ];
+
   const formatCpf = (text) => {
-    // Remove tudo que não é dígito
     let cpf = text.replace(/\D/g, '');
-    // Aplica a máscara
-    if (cpf.length > 3) {
-      cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
-    }
-    if (cpf.length > 7) {
-      cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
-    }
-    if (cpf.length > 11) {
-      cpf = cpf.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    }
+    if (cpf.length > 3) cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
+    if (cpf.length > 7) cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
+    if (cpf.length > 11) cpf = cpf.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     setPacienteCpf(cpf);
   };
 
   const handleSave = async () => {
-    // Remove a máscara para enviar apenas os dígitos
     const cpfLimpo = paciente_cpf.replace(/\D/g, '');
-
     if (!cpfLimpo || !data || !tipoExame) {
       Alert.alert("Erro", "Por favor, preencha os campos obrigatórios (CPF, Data e Tipo de Exame).");
       return;
     }
-
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('authToken');
-      // Alterado o nome do campo enviado para 'paciente_cpf'
       await api.post('/agendamentos', {
-        paciente_cpf: cpfLimpo, // Envia o CPF limpo
-        data_consulta: data, // Alterado para 'data_consulta' para corresponder ao back-end
-        tipo_exame: tipoExame, // Alterado para 'tipo_exame' para corresponder ao back-end
-        descricao, // Mantido, mas não usado no back-end atual (pode ser adicionado se necessário)
+        paciente_cpf: cpfLimpo,
+        data_consulta: data,
+        tipo_exame: tipoExame,
+        descricao,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -64,7 +58,6 @@ export default function CadastroAgendamento({ navigation }) {
       navigation.goBack();
     } catch (error) {
       console.error('Erro ao cadastrar agendamento:', error);
-      // Tratamento de erro específico para CPF não encontrado (status 404)
       if (error.response && error.response.status === 404) {
         Alert.alert("Erro", "Paciente não encontrado para o CPF informado. Verifique o número.");
       } else {
@@ -75,14 +68,11 @@ export default function CadastroAgendamento({ navigation }) {
     }
   };
 
-  const handleGoBack = () => {
-    navigation.goBack();
-  };
+  const handleGoBack = () => navigation.goBack();
 
   return (
     <SafeAreaView style={Estilo.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-
       <View style={Estilo.header}>
         <TouchableOpacity onPress={handleGoBack} style={Estilo.backButton}>
           <Text style={Estilo.backButtonText}>←</Text>
@@ -102,27 +92,57 @@ export default function CadastroAgendamento({ navigation }) {
           style={Estilo.input}
           placeholder="000.000.000-00"
           value={paciente_cpf}
-          onChangeText={formatCpf} // Usa a função de formatação
+          onChangeText={formatCpf}
           keyboardType="numeric"
-          maxLength={14} // Limita o tamanho com a máscara
+          maxLength={14}
         />
 
         <Text style={Estilo.label}>Data da Consulta *</Text>
         <TextInput
           style={Estilo.input}
-          placeholder="AAAA-MM-DD" // Sugestão de formato para facilitar o parse no back-end
+          placeholder="AAAA-MM-DD"
           value={data}
           onChangeText={setData}
-          keyboardType="default" // Alterado para default, pois a data pode ter hífens
+          keyboardType="default"
         />
 
         <Text style={Estilo.label}>Tipo de Exame *</Text>
-        <TextInput
-          style={Estilo.input}
-          placeholder="Ex: Hemograma, Raio-X"
-          value={tipoExame}
-          onChangeText={setTipoExame}
-        />
+        <TouchableOpacity
+          style={Estilo.dropdownHeader}
+          onPress={() => setExameDropdownOpen(!exameDropdownOpen)}
+        >
+          <Text style={Estilo.dropdownHeaderText}>
+            {tipoExame ? tipoExame.toUpperCase() : "Selecione um exame..."}
+          </Text>
+          <Feather name={exameDropdownOpen ? 'chevron-up' : 'chevron-down'} size={20} />
+        </TouchableOpacity>
+
+        {exameDropdownOpen && (
+          <View style={Estilo.dropdownList}>
+            {exames.map((exame) => (
+              <TouchableOpacity
+                key={exame.id}
+                style={[
+                  Estilo.dropdownItem,
+                  tipoExame === exame.nome && Estilo.dropdownItemSelected,
+                ]}
+                onPress={() => {
+                  setTipoExame(exame.nome);
+                  setExameDropdownOpen(false);
+                }}
+              >
+                <Text
+                  style={[
+                    Estilo.dropdownItemText,
+                    tipoExame === exame.nome && Estilo.dropdownItemTextSelected,
+                  ]}
+                >
+                  {exame.nome.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <Text style={Estilo.label}>Descrição (Opcional)</Text>
         <TextInput
@@ -148,7 +168,7 @@ export default function CadastroAgendamento({ navigation }) {
   );
 }
 
-// Estilos (mantidos do arquivo original)
+
 const Estilo = StyleSheet.create({
   container: {
     flex: 1,
@@ -214,5 +234,41 @@ const Estilo = StyleSheet.create({
     color: "#ffffff",
     fontSize: 18,
     fontWeight: "600",
+  },
+  dropdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    marginBottom: 8,
+  },
+  dropdownHeaderText: {
+    fontSize: 16,
+    color: '#212529',
+  },
+  dropdownList: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  dropdownItem: {
+    padding: 12,
+  },
+  dropdownItemSelected: {
+    backgroundColor: '#2480f9',
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: '#212529',
+  },
+  dropdownItemTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
