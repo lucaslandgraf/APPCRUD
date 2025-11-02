@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from "react";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
@@ -10,92 +10,97 @@ import {
   StatusBar,
   Alert,
   Platform,
-} from 'react-native';
+} from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../../../services/api'; // Supondo que use a mesma api configurada para agendamento
+import { Feather } from "@expo/vector-icons";
 
-// API_URL Universal
-const API_URL = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://192.168.100.119:3000'; // Ajuste para seu IP
+export default function CadastroPacientes({ navigation }) {
+  const [nome, setNome] = useState('');
+  const [dataNascimento, setDataNascimento] = useState('');
+  const [endereco, setEndereco] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [observacoes, setObservacoes] = useState('');
+  const [loading, setLoading] = useState(false);
 
-export default function CadastroPacientes({ navigation, route }) {
-  // Se estiver editando, os dados vêm de route.params.paciente
-  const editarPaciente = route?.params?.paciente || null;
-
-  const [nome, setNome] = useState(editarPaciente ? editarPaciente.nome : '');
-  const [dataNascimento, setDataNascimento] = useState(editarPaciente ? editarPaciente.data_nascimento : '');
-  const [endereco, setEndereco] = useState(editarPaciente ? editarPaciente.endereco : '');
-  const [telefone, setTelefone] = useState(editarPaciente ? editarPaciente.telefone : '');
-  const [cpf, setCpf] = useState(editarPaciente ? editarPaciente.CPF : '');
-  const [observacoes, setObservacoes] = useState(editarPaciente ? editarPaciente.observacoes : '');
-  const [isLoading, setIsLoading] = useState(false);
+  const formatCpf = (text) => {
+    let cpf = text.replace(/\D/g, '');
+    if (cpf.length > 3) {
+      cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
+    }
+    if (cpf.length > 7) {
+      cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
+    }
+    if (cpf.length > 11) {
+      cpf = cpf.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+    setCpf(cpf);
+  };
 
   const handleGoBack = () => {
     navigation.goBack();
   };
 
   const handleSave = async () => {
-    if (!nome || !dataNascimento || !endereco || !telefone || !cpf) {
+    const cpfLimpo = cpf.replace(/\D/g, '');
+
+    if (!nome || !dataNascimento || !endereco || !telefone || !cpfLimpo) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
       return;
     }
 
-    setIsLoading(true);
-
-    const pacienteData = {
-      nome,
-      data_nascimento: dataNascimento,
-      endereco,
-      telefone,
-      CPF: cpf,
-      observacoes: observacoes || null,
-    };
-
+    setLoading(true);
     try {
-      let response;
-      if (editarPaciente) {
-        // Atualizar paciente
-        response = await fetch(`${API_URL}/pacientes/${editarPaciente.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pacienteData),
-        });
-      } else {
-        // Criar novo paciente
-        response = await fetch(`${API_URL}/pacientes`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pacienteData),
-        });
-      }
+      const token = await AsyncStorage.getItem('authToken');
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao salvar paciente.');
-      }
+      await api.post('/pacientes', {
+        nome,
+        data_nascimento: dataNascimento,
+        endereco,
+        telefone,
+        cpf: cpfLimpo,
+        observacoes: observacoes || null
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-      Alert.alert('Sucesso', editarPaciente ? 'Paciente atualizado!' : 'Paciente cadastrado!');
+      Alert.alert('Sucesso', 'Paciente cadastrado com sucesso!');
+      // Limpa o formulário
+      setNome('');
+      setDataNascimento('');
+      setEndereco('');
+      setTelefone('');
+      setCpf('');
+      setObservacoes('');
       navigation.goBack();
 
     } catch (error) {
-      Alert.alert('Erro', error.message);
+      console.error('Erro ao cadastrar paciente:', error);
+      Alert.alert('Erro', 'Não foi possível cadastrar o paciente. Tente novamente.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={Estilo.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      
-      {/* Header */}
+
       <View style={Estilo.header}>
         <TouchableOpacity onPress={handleGoBack} style={Estilo.backButton}>
-          <Text style={Estilo.backButtonText}>{'<-'} Voltar</Text>
+          <Text style={Estilo.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={Estilo.headerTitle}>
-          {editarPaciente ? 'Editar Paciente' : 'Cadastro de Paciente'}
-        </Text>
+        <Feather
+          style={Estilo.headerIcon}
+          name="user-plus"
+          size={27}
+          color="rgba(36, 128, 249, 0.8)"
+        />
+        <Text style={Estilo.headerTitle}>Cadastro de Paciente</Text>
       </View>
 
-      <ScrollView style={Estilo.content}>        
+      <ScrollView style={Estilo.content} keyboardShouldPersistTaps="handled">
         <Text style={Estilo.label}>Nome *</Text>
         <TextInput
           style={Estilo.input}
@@ -111,7 +116,7 @@ export default function CadastroPacientes({ navigation, route }) {
           placeholder="AAAA-MM-DD"
           value={dataNascimento}
           onChangeText={setDataNascimento}
-          keyboardType="numeric"
+          keyboardType="default"
         />
 
         <Text style={Estilo.label}>Endereço *</Text>
@@ -137,13 +142,14 @@ export default function CadastroPacientes({ navigation, route }) {
           style={Estilo.input}
           placeholder="000.000.000-00"
           value={cpf}
-          onChangeText={setCpf}
+          onChangeText={formatCpf}
           keyboardType="numeric"
+          maxLength={14}
         />
 
         <Text style={Estilo.label}>Observações</Text>
         <TextInput
-          style={[Estilo.input, { height: 80, textAlignVertical: 'top' }]}
+          style={[Estilo.input, Estilo.textArea]}
           placeholder="Observações adicionais"
           value={observacoes}
           onChangeText={setObservacoes}
@@ -152,12 +158,12 @@ export default function CadastroPacientes({ navigation, route }) {
         />
 
         <TouchableOpacity
-          style={[Estilo.saveButton, isLoading && Estilo.saveButtonDisabled]}
+          disabled={loading}
+          style={[Estilo.saveButton, loading && { opacity: 0.6 }]}
           onPress={handleSave}
-          disabled={isLoading}
         >
           <Text style={Estilo.saveButtonText}>
-            {isLoading ? 'Salvando...' : editarPaciente ? 'Atualizar Paciente' : 'Salvar Paciente'}
+            {loading ? "Salvando..." : "Salvar Paciente"}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -168,64 +174,67 @@ export default function CadastroPacientes({ navigation, route }) {
 const Estilo = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#f8f9fa",
   },
   header: {
-    backgroundColor: '#ffffff',
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: "#ffffff",
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    borderBottomColor: "#e9ecef",
   },
   backButton: {
     marginRight: 10,
   },
   backButtonText: {
     fontSize: 16,
-    color: '#4285f4',
+    color: "#4285f4",
+  },
+  headerIcon: {
+    marginRight: 12,
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '600',
-    color: '#212529',
+    fontWeight: "600",
+    color: "#212529",
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingVertical: 20,
   },
   label: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#212529',
+    color: "#212529",
     marginBottom: 8,
-    marginTop: 15,
   },
   input: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: '#ced4da',
+    borderColor: "#ced4da",
     borderRadius: 8,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
     fontSize: 16,
-    color: '#212529',
+    color: "#495057",
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: "top",
   },
   saveButton: {
-    backgroundColor: '#28a745',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 30,
-    marginBottom: 20,
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#a3d9a5',
+    backgroundColor: "#2480f9",
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: "center",
+    marginTop: 10,
   },
   saveButtonText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

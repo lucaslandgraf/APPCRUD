@@ -15,73 +15,104 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../../services/api';
 import { Feather } from "@expo/vector-icons";
 
-export default function EdicaoPaciente({ route, navigation }) {
-  const { pacienteId } = route.params; // Recebe o ID do paciente
-
-  const [nome, setNome] = useState("");
-  const [dataNascimento, setDataNascimento] = useState("");
-  const [endereco, setEndereco] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [observacoes, setObservacoes] = useState("");
+export default function EdicaoAgendamento({ route, navigation }) {
+  const { agendamentoId } = route.params; // Recebe o ID do agendamento
+  
+  const [pacienteId, setPacienteId] = useState(""); // Mantemos o ID do paciente para a atualização
+  const [data, setData] = useState("");
+  const [tipoExame, setTipoExame] = useState("");
+  const [descricao, setDescricao] = useState(""); // Assumindo que a descrição é um campo que pode ser atualizado
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fetchPaciente = async () => {
+    const fetchAgendamento = async () => {
       try {
         const token = await AsyncStorage.getItem('authToken');
-        const response = await api.get(`/pacientes/${pacienteId}`, {
+        const response = await api.get(`/agendamentos/${agendamentoId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const paciente = response.data;
-        console.log(response.data);
+        const agendamento = response.data;
+        
+        // Preenche os estados com os dados do agendamento
+        setPacienteId(agendamento.paciente_id.toString()); // O back-end retorna paciente_id
+        setData(agendamento.data_consulta); // Assumindo que o campo é data_consulta
+        setTipoExame(agendamento.tipo_exame); // Assumindo que o campo é tipo_exame
+        // Se houver um campo 'descricao' no seu banco de dados, adicione-o aqui
+        // setDescricao(agendamento.descricao || ""); 
 
-        setNome(paciente.nome);
-        setDataNascimento(paciente.data_nascimento);
-        setEndereco(paciente.endereco);
-        setTelefone(paciente.telefone);
-        setCpf(paciente.cpf);
-        setObservacoes(paciente.observacoes || "");
       } catch (error) {
-        console.error('Erro ao carregar paciente:', error);
-        Alert.alert("Erro", "Não foi possível carregar os dados do paciente.");
+        console.error('Erro ao carregar agendamento:', error);
+        Alert.alert("Erro", "Não foi possível carregar os dados do agendamento.");
         navigation.goBack();
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPaciente();
-  }, [pacienteId, navigation]);
+    fetchAgendamento();
+  }, [agendamentoId, navigation]);
 
   const handleUpdate = async () => {
-    if (!nome || !dataNascimento || !cpf) {
-      Alert.alert("Erro", "Por favor, preencha os campos obrigatórios (Nome, Data de Nascimento e CPF).");
+    if (!pacienteId || !data || !tipoExame) {
+      Alert.alert("Erro", "Por favor, preencha os campos obrigatórios.");
       return;
     }
 
     setSaving(true);
     try {
       const token = await AsyncStorage.getItem('authToken');
-      await api.put(`/pacientes/${pacienteId}`, {
-        nome,
-        data_nascimento: dataNascimento,
-        endereco,
-        telefone,
-        cpf,
-        observacoes,
+      await api.put(`/agendamentos/${agendamentoId}`, {
+        paciente_id: pacienteId, // O back-end de atualização espera paciente_id
+        data_consulta: data,
+        tipo_exame: tipoExame,
+        // Inclua a descrição se for um campo no seu banco de dados
+        // descricao: descricao, 
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      Alert.alert("Sucesso", "Paciente atualizado com sucesso!");
+      Alert.alert("Sucesso", "Agendamento atualizado com sucesso!");
       navigation.goBack();
     } catch (error) {
-      console.error('Erro ao atualizar paciente:', error);
-      Alert.alert("Erro", "Não foi possível atualizar o paciente.");
+      console.error('Erro ao atualizar agendamento:', error);
+      Alert.alert("Erro", "Não foi possível atualizar o agendamento.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Confirmação",
+      "Tem certeza que deseja deletar este agendamento?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Deletar",
+          onPress: async () => {
+            setSaving(true);
+            try {
+              const token = await AsyncStorage.getItem('authToken');
+              await api.delete(`/agendamentos/${agendamentoId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              Alert.alert("Sucesso", "Agendamento deletado com sucesso!");
+              navigation.goBack();
+            } catch (error) {
+              console.error('Erro ao deletar agendamento:', error);
+              Alert.alert("Erro", "Não foi possível deletar o agendamento.");
+            } finally {
+              setSaving(false);
+            }
+          },
+          style: "destructive",
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   const handleGoBack = () => {
@@ -92,7 +123,7 @@ export default function EdicaoPaciente({ route, navigation }) {
     return (
       <View style={Estilo.loadingContainer}>
         <ActivityIndicator size="large" color="#2480f9" />
-        <Text>Carregando Paciente...</Text>
+        <Text>Carregando Agendamento...</Text>
       </View>
     );
   }
@@ -111,59 +142,42 @@ export default function EdicaoPaciente({ route, navigation }) {
           size={27}
           color="rgba(36, 128, 249, 0.8)"
         />
-        <Text style={Estilo.headerTitle}>Editar Paciente</Text>
+        <Text style={Estilo.headerTitle}>Editar Agendamento</Text>
       </View>
 
       <ScrollView style={Estilo.content} keyboardShouldPersistTaps="handled">
-        <Text style={Estilo.label}>Nome *</Text>
+        <Text style={Estilo.label}>ID do Paciente *</Text>
         <TextInput
           style={Estilo.input}
-          placeholder="Nome completo"
-          value={nome}
-          onChangeText={setNome}
-        />
-
-        <Text style={Estilo.label}>Data de Nascimento *</Text>
-        <TextInput
-          style={Estilo.input}
-          placeholder="AAAA-MM-DD"
-          value={dataNascimento}
-          onChangeText={setDataNascimento}
-          keyboardType="default"
-        />
-
-        <Text style={Estilo.label}>Endereço</Text>
-        <TextInput
-          style={Estilo.input}
-          placeholder="Endereço completo"
-          value={endereco}
-          onChangeText={setEndereco}
-        />
-
-        <Text style={Estilo.label}>Telefone</Text>
-        <TextInput
-          style={Estilo.input}
-          placeholder="(XX) XXXXX-XXXX"
-          value={telefone}
-          onChangeText={setTelefone}
-          keyboardType="phone-pad"
-        />
-
-        <Text style={Estilo.label}>CPF *</Text>
-        <TextInput
-          style={Estilo.input}
-          placeholder="000.000.000-00"
-          value={cpf}
-          onChangeText={setCpf}
+          placeholder="ID do Paciente"
+          value={pacienteId}
+          onChangeText={setPacienteId}
           keyboardType="numeric"
         />
 
-        <Text style={Estilo.label}>Observações</Text>
+        <Text style={Estilo.label}>Data da Consulta *</Text>
+        <TextInput
+          style={Estilo.input}
+          placeholder="AAAA-MM-DD"
+          value={data}
+          onChangeText={setData}
+          keyboardType="default"
+        />
+
+        <Text style={Estilo.label}>Tipo de Exame *</Text>
+        <TextInput
+          style={Estilo.input}
+          placeholder="Ex: Hemograma, Raio-X"
+          value={tipoExame}
+          onChangeText={setTipoExame}
+        />
+
+        <Text style={Estilo.label}>Descrição (Opcional)</Text>
         <TextInput
           style={[Estilo.input, Estilo.textArea]}
-          placeholder="Observações adicionais"
-          value={observacoes}
-          onChangeText={setObservacoes}
+          placeholder="Informações adicionais sobre o agendamento"
+          value={descricao}
+          onChangeText={setDescricao}
           multiline
           numberOfLines={4}
         />
@@ -174,7 +188,17 @@ export default function EdicaoPaciente({ route, navigation }) {
           onPress={handleUpdate}
         >
           <Text style={Estilo.saveButtonText}>
-            {saving ? "Salvando..." : "Atualizar Paciente"}
+            {saving ? "Salvando..." : "Atualizar Agendamento"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          disabled={saving}
+          style={[Estilo.deleteButton, saving && { opacity: 0.6 }]}
+          onPress={handleDelete}
+        >
+          <Text style={Estilo.deleteButtonText}>
+            Deletar Agendamento
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -255,7 +279,7 @@ const Estilo = StyleSheet.create({
     fontWeight: "600",
   },
   deleteButton: {
-    backgroundColor: "#dc3545",
+    backgroundColor: "#dc3545", // Cor vermelha para deletar
     borderRadius: 12,
     paddingVertical: 15,
     alignItems: "center",

@@ -20,6 +20,7 @@ import EditarAluno from './src/pages/MainTabs/Alunos/EditarAluno';
 import Agendamentos from './src/pages/MainTabs/Agendamentos/Agendamentos';
 import CadastroAgendamento from './src/pages/MainTabs/Agendamentos/CadastroAgendamento';
 import ListagemAgendamentos from './src/pages/MainTabs/Agendamentos/ListagemAgendamentos';
+import EdicaoAgendamento from './src/pages/MainTabs/Agendamentos/EdicaoAgendamento';
 import Relatorios from './src/pages/MainTabs/Relatorios/Relatorios';
 import RelatorioPaciente from './src/pages/MainTabs/Relatorios/RelatorioPaciente';
 import GraficoRelatorio from './src/pages/MainTabs/Relatorios/GraficoRelatorio';
@@ -90,6 +91,7 @@ export default function App() {
                 <Stack.Screen name="Agendamentos" component={Agendamentos}/>
                 <Stack.Screen name="CadastroAgendamento" component={CadastroAgendamento}/>
                 <Stack.Screen name="ListagemAgendamentos" component={ListagemAgendamentos}/>
+                <Stack.Screen name="EdicaoAgendamento" component={EdicaoAgendamento}/>
                 <Stack.Screen name="Relatorios" component={Relatorios}/>
                 <Stack.Screen name="RelatorioPaciente" component={RelatorioPaciente}/>
                 <Stack.Screen name="GraficoRelatorio" component={GraficoRelatorio}/>

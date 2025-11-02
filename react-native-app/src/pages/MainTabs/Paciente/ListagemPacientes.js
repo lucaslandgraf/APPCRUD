@@ -43,34 +43,30 @@ export default function ListaPacientes({ navigation }) {
   };
 
   const handleEditPatient = (paciente) => {
-    navigation.navigate('EditarPaciente', { paciente }); // Passa paciente para edição
+    navigation.navigate('EditarPaciente', { pacienteId: paciente.id }); // Passa paciente para edição
   };
 
   const handleDeletePatient = (paciente) => {
-    window.alert(
-      'Confirmar exclusão',
-      `Deseja realmente excluir o paciente ${paciente.nome}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const token = await AsyncStorage.getItem('authToken');
-              await api.delete(`/pacientes/${paciente.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              Alert.alert('Sucesso', `Paciente ${paciente.nome} excluído!`);
-              carregarPacientes();
-            } catch (error) {
-              console.error('Erro ao excluir paciente:', error);
-              Alert.alert('Erro', 'Não foi possível excluir o paciente');
-            }
-          },
-        },
-      ]
+    const confirmacao = window.confirm(
+      `Deseja realmente excluir o paciente ${paciente.nome} (ID: ${paciente.id})?`
     );
+
+    if (confirmacao) {
+      const performDelete = async () => {
+        try {
+          const token = await AsyncStorage.getItem('authToken');
+          await api.delete(`/pacientes/${paciente.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          window.alert(`Sucesso! Paciente ${paciente.nome} excluído.`);
+          carregarPacientes();
+        } catch (error) {
+          console.error('Erro ao excluir paciente:', error);
+          window.alert('Erro', 'Não foi possível excluir o paciente. Verifique se a rota DELETE /pacientes/:id está configurada corretamente no back-end.');
+        }
+      };
+      performDelete();
+    }
   };
 
   return (
@@ -106,7 +102,7 @@ export default function ListaPacientes({ navigation }) {
               <Text style={Estilo.patientDetails}>
                 Idade: {new Date().getFullYear() - new Date(paciente.data_nascimento).getFullYear()} anos
               </Text>
-              <Text style={Estilo.patientDetails}>CPF: {paciente.CPF}</Text>
+              <Text style={Estilo.patientDetails}>CPF: {paciente.cpf}</Text>
             </View>
             <View style={Estilo.actionsContainer}>
               <TouchableOpacity

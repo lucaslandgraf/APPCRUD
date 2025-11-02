@@ -34,7 +34,7 @@ async function criarPaciente(req, res) {
   }
   try {
     const [result] = await pool.execute(
-      'INSERT INTO paciente (nome, data_nascimento, endereco, telefone, CPF, observacoes) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO paciente (nome, data_nascimento, endereco, telefone, cpf, observacoes) VALUES (?, ?, ?, ?, ?, ?)',
       [nome, data_nascimento, endereco, telefone, cpf, observacoes || null]
     );
     res.status(201).json({ message: 'Paciente criado', id: result.insertId });
@@ -47,13 +47,13 @@ async function criarPaciente(req, res) {
 // Atualizar paciente pelo ID
 async function atualizarPaciente(req, res) {
   const { id } = req.params;
-  const { nome, data_nascimento, endereco, telefone, CPF, observacoes } = req.body;
+  const { nome, data_nascimento, endereco, telefone, cpf, observacoes } = req.body;
   if (!nome || !data_nascimento || !endereco || !telefone || !cpf) {
     return res.status(400).json({ error: 'Dados incompletos para atualizar paciente' });
   }
   try {
     const [result] = await pool.execute(
-      'UPDATE paciente SET nome = ?, data_nascimento = ?, endereco = ?, telefone = ?, CPF = ?, observacoes = ? WHERE id = ?',
+      'UPDATE paciente SET nome = ?, data_nascimento = ?, endereco = ?, telefone = ?, cpf = ?, observacoes = ? WHERE id = ?',
       [nome, data_nascimento, endereco, telefone, cpf, observacoes || null, id]
     );
     if (result.affectedRows === 0) {
