@@ -43,6 +43,7 @@ export default function CadastroExameDinamico({ navigation }) {
   const [dataInicioSintomasCovid, setDataInicioSintomasCovid] = useState("");
   const [sintomas, setSintomas] = useState("");
   const [obsCovid, setObsCovid] = useState("");
+  const [nivelAnticorpos, setNivelAnticorpos] = useState("");
 
   const [loading, setLoading] = useState(false);
 
@@ -189,6 +190,7 @@ export default function CadastroExameDinamico({ navigation }) {
         payload.resultado = resultado;
         payload.data_inicio_sintomas = dataInicioSintomasCovid || null;
         payload.sintomas = sintomas || null;
+        payload.nivel_anticorpos = nivelAnticorpos || null;
         payload.observacoes = obsCovid || null;
         break;
       default:
@@ -428,6 +430,15 @@ export default function CadastroExameDinamico({ navigation }) {
       placeholder="Liste os sintomas"
       value={sintomas}
       onChangeText={setSintomas}
+      multiline
+      numberOfLines={4}
+    />
+    <Text style={Estilo.label}>Nivel Anticorpos</Text>
+    <TextInput
+      style={[Estilo.input, Estilo.textArea]}
+      placeholder="Nivel dos Anticorpos"
+      value={nivelAnticorpos}
+      onChangeText={setNivelAnticorpos}
       multiline
       numberOfLines={4}
     />
