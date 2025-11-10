@@ -433,14 +433,13 @@ export default function CadastroExameDinamico({ navigation }) {
       multiline
       numberOfLines={4}
     />
-    <Text style={Estilo.label}>Nivel Anticorpos</Text>
+    <Text style={Estilo.label}>Nível Anticorpos (BAU/mL)</Text>
     <TextInput
-      style={[Estilo.input, Estilo.textArea]}
-      placeholder="Nivel dos Anticorpos"
-      value={nivelAnticorpos}
-      onChangeText={setNivelAnticorpos}
-      multiline
-      numberOfLines={4}
+        style={Estilo.input} 
+        placeholder="Ex: 1500.5" 
+        value={nivelAnticorpos}
+        onChangeText={setNivelAnticorpos}
+        keyboardType="numeric"
     />
     <Text style={Estilo.label}>Observações</Text>
     <TextInput

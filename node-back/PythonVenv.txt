@@ -1,0 +1,18 @@
+1. Criar o Ambiente Virtual (.venv)
+Primeiro, ele precisa criar a pasta .venv (a "garagem" vazia).
+
+Comando: python -m venv .venv
+
+(Ele roda isso no terminal, dentro da pasta do projeto node-back).
+
+2. Ativar o Ambiente
+Depois de criar, ele precisa "entrar" ou "ativar" esse ambiente.
+
+Comando (Windows): .\.venv\Scripts\activate
+
+Comando (Mac/Linux): source .venv/bin/activate
+
+3. Instalar as Dependências
+Agora que ele está "dentro" do .venv, ele usa a "lista de compras" (requirements.txt) para instalar tudo o que precisa.
+
+Comando: pip install -r requirements.txt

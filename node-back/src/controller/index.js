@@ -8,7 +8,7 @@ const { listarAlunos, cadastrarAluno, excluirAluno, atualizarAluno } = require('
 const { listarPacientes, criarPaciente, atualizarPaciente, obterPaciente, deletarPaciente } = require('../modules/paciente/controller/PacienteController')
 const { listarAgendamentos, deletarAgendamento, criarAgendamento, atualizarAgendamento, obterAgendamento } = require('../modules/agendamento/controller/AgendamentoController');
 const { listarTodosExames, criarExameCovid19, criarExameDengue, criarExameAbo, listarExameCovid19, listarExameAbo, listarExameDengue } = require('../modules/exames/controller/ExamesController');
-const { gerarRelatorioGeral } = require('../modules/relatorio/controller/relatorioController');
+const { gerarRelatorioGeral, gerarGraficoRegressao } = require('../modules/relatorio/controller/relatorioController');
 const { getDashboardStats } = require('../modules/dashboard/controller/dashboardController'); 
 const { checkAuth, checkRole } = require('../middlewares/authMiddleware');
 
@@ -72,6 +72,9 @@ app.get('/exames/abo', listarExameAbo);
 
 // ROTA DE RELATÓRIOS
 app.get('/relatorios', checkAuth, checkRole(['DEFAULT', 'ADM']), gerarRelatorioGeral);
+
+// ROTA DE RELATÓRIO DATASCIENCE
+app.get('/grafico-regressao', checkAuth, checkRole(['DEFAULT', 'ADM']), gerarGraficoRegressao);
 
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
