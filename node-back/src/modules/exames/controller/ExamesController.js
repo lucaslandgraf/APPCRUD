@@ -122,16 +122,16 @@ async function obterExameCovid19(req, res) {
 }
 
 async function criarExameCovid19(req, res) {
-  const { agendamento_id, paciente_id, nome, tipo_teste, status_amostra, resultado, data_inicio_sintomas, sintomas, observacoes } = req.body;
+  const { agendamento_id, paciente_id, nome, tipo_teste, status_amostra, resultado, data_inicio_sintomas, sintomas, nivel_anticorpos, observacoes } = req.body;
   try {
     const [result] = await pool.execute(
       `INSERT INTO exame_covid_19
-       (agendamento_id, paciente_id, nome, tipo_teste, status_amostra, resultado, data_inicio_sintomas, sintomas, observacoes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (agendamento_id, paciente_id, nome, tipo_teste, status_amostra, resultado, data_inicio_sintomas, sintomas, nivel_anticorpos, observacoes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         agendamento_id || null, paciente_id || null, nome || null, tipo_teste || null,
         status_amostra || null, resultado || null, data_inicio_sintomas || null,
-        sintomas || null, observacoes || null
+        sintomas || null, nivel_anticorpos || null, observacoes || null
       ]
     );
     res.status(201).json({ message: 'Exame COVID-19 criado', id: result.insertId });
@@ -143,17 +143,17 @@ async function criarExameCovid19(req, res) {
 
 async function atualizarExameCovid19(req, res) {
   const { id } = req.params;
-  const { agendamento_id, paciente_id, nome, tipo_teste, status_amostra, resultado, data_inicio_sintomas, sintomas, observacoes } = req.body;
+  const { agendamento_id, paciente_id, nome, tipo_teste, status_amostra, resultado, data_inicio_sintomas, sintomas, nivel_anticorpos, observacoes } = req.body;
   try {
     const [result] = await pool.execute(
       `UPDATE exame_covid_19 SET
        agendamento_id = ?, paciente_id = ?, nome = ?, tipo_teste = ?, status_amostra = ?, resultado = ?,
-       data_inicio_sintomas = ?, sintomas = ?, observacoes = ?
+       data_inicio_sintomas = ?, sintomas = ?, nivel_anticorpos = ?, observacoes = ?
        WHERE id = ?`,
       [
         agendamento_id || null, paciente_id || null, nome || null, tipo_teste || null,
         status_amostra || null, resultado || null, data_inicio_sintomas || null,
-        sintomas || null, observacoes || null, id
+        sintomas || null, nivel_anticorpos || null, observacoes || null, id
       ]
     );
     if (result.affectedRows === 0) {
