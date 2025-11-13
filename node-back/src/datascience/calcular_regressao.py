@@ -1,28 +1,28 @@
 import sys
 import json
-from datetime import date
+from datetime import date, datetime
 import pandas as pd
-import mysql.connector 
-from sklearn.linear_model import LinearRegression 
-from sklearn.metrics import r2_score 
 import numpy as np
+import statsmodels.api as sm
+import mysql.connector 
 
-def calcular_idade(data_nascimento):
-    """Calcula a idade com precisão decimal."""
+def calcular_idade(data_nascimento_dt):
+    """Calcula a idade com precisão decimal a partir de um objeto datetime."""
     hoje = date.today()
-    data_nasc_simples = data_nascimento.date() 
+    data_nasc_simples = data_nascimento_dt.date() 
     diferenca_dias = (hoje - data_nasc_simples).days 
     return diferenca_dias / 365.25
 
 def main():
-    """Função principal que faz a análise e imprime o JSON."""
+    """Função principal que busca dados no SQL, faz a análise e imprime o JSON."""
+    db = None 
     try:
-        db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="", 
-            database="sps-mobile"
-        )
+        db_config = {
+            'host': 'localhost',     
+            'user': 'root',           
+            'password': '',           
+            'database': 'sps-mobile'  
+        }
 
         sql_query = """
             SELECT 
@@ -35,19 +35,20 @@ def main():
                 AND p.data_nascimento IS NOT NULL;
         """
         
+        db = mysql.connector.connect(**db_config)
+        
+        # Executa a query e carrega diretamente no DataFrame
         df = pd.read_sql(sql_query, db)
-        db.close()
 
         if len(df) < 2:
             raise Exception("Dados insuficientes para calcular a regressão (mínimo 2 pontos).")
 
+        # Converte colunas
         df['data_nascimento'] = pd.to_datetime(df['data_nascimento'])
+        df['nivel_anticorpos'] = pd.to_numeric(df['nivel_anticorpos'])
+        
         df['idade'] = df['data_nascimento'].apply(calcular_idade)
         
-        X_df = df[['idade']]       
-        Y_df = df['nivel_anticorpos'] 
-
-        #  ANÁLISE EXPLORATÓRIA (AED) 
         aed_idade = {
             "media": df['idade'].mean(),
             "mediana": df['idade'].median(),
@@ -59,6 +60,7 @@ def main():
             "max": df['idade'].max()
         }
         
+        Y_df = df['nivel_anticorpos']
         aed_anticorpos = {
             "media": Y_df.mean(),
             "mediana": Y_df.median(),
@@ -70,17 +72,17 @@ def main():
             "max": Y_df.max()
         }
 
-        # CALCULAR A REGRESSÃO LINEAR
-        model = LinearRegression()
-        model.fit(X_df, Y_df)
+        # CALCULAR REGRESSÃO COM STATSMODELS
+        Y = df['nivel_anticorpos']
+        X = df['idade']
+        X = sm.add_constant(X) 
+        model = sm.OLS(Y, X).fit()
 
-        # Pegar os resultados
-        alpha = model.intercept_      
-        beta = model.coef_[0]         
-        Y_pred = model.predict(X_df)
-        r2 = r2_score(Y_df, Y_pred)
-
-        # JSON de saída
+        alpha = model.params['const']
+        beta = model.params['idade']
+        r2 = model.rsquared
+        p_value_beta = model.pvalues['idade']
+        
         data_points = df.rename(columns={'idade': 'x', 'nivel_anticorpos': 'y'})[['x', 'y']].to_dict('records')
 
         resultados = {
@@ -89,21 +91,26 @@ def main():
                 "alpha": alpha,
                 "beta": beta,
                 "R2": r2,
+                "p_value": p_value_beta,
                 "equation": f"Y = {alpha:.2f} + {beta:.2f} * X"
             },
-            # --- NOVO: Adiciona o resultado da AED ao JSON ---
             "aed_stats": {
                 "idade": aed_idade,
                 "nivel_anticorpos": aed_anticorpos
             }
         }
 
-        # Imprimir o JSON
-        print(json.dumps(resultados))
+        print(json.dumps(resultados)) # Envia o JSON final para o Node.js
 
     except Exception as e:
+        # Imprime o erro no stderr para o Node.js capturar
         print(json.dumps({"error": str(e)}), file=sys.stderr)
         sys.exit(1)
+        
+    finally:
+        # Garante que a conexão com o banco seja fechada
+        if db and db.is_connected():
+            db.close()
 
 if __name__ == "__main__":
     main()

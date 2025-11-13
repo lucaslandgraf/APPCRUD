@@ -24,9 +24,11 @@ async function gerarRelatorioGeral(req, res) {
                 p.observacoes AS paciente_observacoes,
                 ra.id AS agendamento_id,
                 ra.data_consulta AS agendamento_data_consulta,
-                ra.tipo_exame AS agendamento_tipo_exame
+                ra.tipo_exame AS agendamento_tipo_exame,
+                ec.nivel_anticorpos 
             FROM paciente p
             LEFT JOIN RankedAgendamentos ra ON p.id = ra.paciente_id AND ra.rn = 1
+            LEFT JOIN exame_covid_19 ec ON ra.id = ec.agendamento_id
             ORDER BY p.nome ASC;
         `;
         const [rows] = await pool.execute(sqlQuery);
@@ -38,61 +40,52 @@ async function gerarRelatorioGeral(req, res) {
     }
 }
 
-// chama o script Python
 async function gerarGraficoRegressao(req, res) {
-    
-    //  Define o caminho para o script Python
-    // Ele "sobe" dois níveis (de controller/ e relatorio/) até o 'src/'
-    // e depois "desce" para 'datascience/calcular_regressao.py'
-    const scriptPath = path.join(__dirname, '../../../datascience/calcular_regressao.py');
+    let dataBuffer = '';
+    let errorBuffer = '';
 
-    //  Define o comando para executar o Python
-    const pythonExecutable = path.join(__dirname, '../../../../venv/Scripts/python.exe'); // ou 'python3' se python não funcionar
+    try {
+        const scriptPath = path.join(__dirname, '../../../datascience/calcular_regressao.py');
+        const pythonExecutable = path.join(__dirname, '../../../../venv/Scripts/python.exe');     
+        const pythonProcess = spawn(pythonExecutable, [scriptPath]);
+        pythonProcess.stdout.on('data', (data) => {
+            dataBuffer += data.toString();
+        });
 
-    //  Executa o script Python
-    const pythonProcess = spawn(pythonExecutable, [scriptPath]);
+        pythonProcess.stderr.on('data', (data) => {
+            errorBuffer += data.toString();
+        });
 
-    let dataBuffer = ''; // Para guardar os dados que o Python envia
-    let errorBuffer = ''; // Para guardar os erros
-
-    //  "Escuta" o que o Python imprime no console (stdout)
-    pythonProcess.stdout.on('data', (data) => {
-        dataBuffer += data.toString();
-    });
-
-    // "Escuta" qualquer erro que o Python imprimir (stderr)
-    pythonProcess.stderr.on('data', (data) => {
-        errorBuffer += data.toString();
-    });
-
-    //  Quando o script Python terminar...
-    pythonProcess.on('close', (code) => {
-        if (code !== 0) {
-            // Se o código for diferente de 0, deu erro no Python
-            console.error('Erro no script Python (stderr):', errorBuffer);
-            try {
-                const errorJson = JSON.parse(errorBuffer);
-                return res.status(500).json({ error: errorJson.error || "Erro no script Python" });
-            } catch (e) {
-                return res.status(500).json({ error: errorBuffer || "Erro desconhecido ao rodar script Python" });
+        pythonProcess.on('close', (code) => {
+            if (code !== 0) {
+                console.error('Erro no script Python (stderr):', errorBuffer);
+                try {
+                    const errorJson = JSON.parse(errorBuffer);
+                    return res.status(500).json({ error: errorJson.error || "Erro no script Python" });
+                } catch (e) {
+                    // Se não for JSON, envia o texto bruto do erro
+                    return res.status(500).json({ error: errorBuffer || "Erro desconhecido ao rodar script Python" });
+                }
             }
-        }
+            try {
+                // Se o código for 0 (sucesso), parseia o JSON dos dados
+                const jsonData = JSON.parse(dataBuffer);
+                res.status(200).json(jsonData);
+            } catch (e) {
+                console.error('Erro ao parsear JSON do Python:', e.message);
+                res.status(500).json({ error: 'Erro ao processar resposta do Python.' });
+            }
+        });
 
-        try {
-            const jsonData = JSON.parse(dataBuffer);
-            // Envia o JSON do Python direto para o React Native
-            res.status(200).json(jsonData);
-        } catch (e) {
-            console.error('Erro ao parsear JSON do Python:', e.message);
-            res.status(500).json({ error: 'Erro ao processar resposta do Python.' });
-        }
-    });
+        pythonProcess.on('error', (err) => {
+             console.error('Falha ao iniciar o processo Python:', err);
+             res.status(500).json({ error: 'Falha ao iniciar serviço de Data Science.' });
+        });
 
-    // Pega erros na própria chamada (ex: 'python' não encontrado)
-    pythonProcess.on('error', (err) => {
-         console.error('Falha ao iniciar o processo Python:', err);
-         res.status(500).json({ error: 'Falha ao iniciar serviço de Data Science.' });
-    });
+    } catch (processError) { // Este catch agora pega erros do 'spawn'
+        console.error('Erro ao tentar iniciar o script Python:', processError);
+        return res.status(500).json({ error: 'Erro interno ao iniciar análise.' });
+    }
 }
 
 module.exports = {

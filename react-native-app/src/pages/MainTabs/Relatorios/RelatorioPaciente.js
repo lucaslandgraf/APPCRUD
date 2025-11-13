@@ -12,7 +12,8 @@ import {
     LayoutAnimation, 
     UIManager, 
     Platform,
-    TextInput 
+    TextInput,
+    ScrollView 
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -31,7 +32,7 @@ export default function RelatorioPaciente({ navigation }) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expandedId, setExpandedId] = useState(null);
-    const [isPdfLoading, setIsPdfLoading] = useState(false);
+    const [isPrinting, setIsPrinting] = useState(false);
 
     const fetchRelatorio = async () => {
         setIsLoading(true);
@@ -76,11 +77,11 @@ export default function RelatorioPaciente({ navigation }) {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setExpandedId(expandedId === id ? null : id);
     };
-
-    // FUNÇÃO DE GERAR HTML 
     const gerarHtmlRelatorio = (dados) => {
         let itemsHtml = '';
         dados.forEach(item => {
+            const nivelAnticorpos = item.nivel_anticorpos ? item.nivel_anticorpos.toFixed(2) : 'N/A';
+
             itemsHtml += `
                 <tr>
                     <td>${item.paciente_id}</td>
@@ -92,6 +93,8 @@ export default function RelatorioPaciente({ navigation }) {
                     <td>${item.agendamento_id || 'N/A'}</td>
                     <td>${formatarData(item.agendamento_data_consulta)}</td>
                     <td>${item.agendamento_tipo_exame || 'N/A'}</td>
+                    
+                    <td>${nivelAnticorpos}</td>
                 </tr>
             `;
         });
@@ -105,6 +108,13 @@ export default function RelatorioPaciente({ navigation }) {
                     th, td { border: 1px solid #ddd; padding: 6px; text-align: left; word-wrap: break-word; }
                     th { background-color: #f2f2f2; font-size: 11px; }
                     tr:nth-child(even) { background-color: #f9f9f9; }
+                    @media print {
+                        body { font-size: 10pt; }
+                        table { page-break-inside: auto; }
+                        tr { page-break-inside: avoid; page-break-after: auto; }
+                        thead { display: table-header-group; }
+                        h1 { page-break-after: avoid; }
+                    }
                 </style>
             </head>
             <body>
@@ -121,6 +131,8 @@ export default function RelatorioPaciente({ navigation }) {
                             <th>Últ. Agend. ID</th>
                             <th>Últ. Consulta</th>
                             <th>Últ. Exame</th>
+
+                            <th>Nível Anticorpos (BAU/mL)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -132,36 +144,50 @@ export default function RelatorioPaciente({ navigation }) {
         `;
     };
 
-    // Função de PDF/Share
-    const handleGerarPdf = async (htmlContent, fileName) => {
-        if (isPdfLoading) return;
-        setIsPdfLoading(true);
+
+    // Função de impressão com lógica web (window.open)
+    const handleGerarRelatorio = async (htmlContent) => {
+        if (isPrinting) return;
+        setIsPrinting(true);
+
         try {
-            // Converte HTML para PDF usando 'expo-print'
-            const { uri } = await Print.printToFileAsync({
-                html: htmlContent,
-                base64: false // O 'expo-sharing' prefere a URI do arquivo
-            });
+            // --- WEB ---
+            if (Platform.OS === 'web') {
+                const printWindow = window.open('', '_blank');
+                if (!printWindow) {
+                    Alert.alert("Erro", "Por favor, habilite pop-ups no seu navegador para imprimir.");
+                    setIsPrinting(false);
+                    return;
+                }
+                
+                printWindow.document.write(htmlContent);
+                printWindow.document.close(); 
 
-            // Verifica se o compartilhamento é possível
-            if (!(await Sharing.isAvailableAsync())) {
-                Alert.alert('Erro', 'O compartilhamento não está disponível neste dispositivo.');
-                setIsPdfLoading(false);
-                return;
-            }
+                setTimeout(() => {
+                    printWindow.print(); 
+                    printWindow.close(); 
+                }, 250);
             
-            // Compartilha o arquivo PDF usando 'expo-sharing'
-            await Sharing.shareAsync(uri, {
-                dialogTitle: 'Compartilhar Relatório',
-                mimeType: 'application/pdf',
-                UTI: '.pdf',
-            });
-
+            // --- NATIVO (iOS/Android) ---
+            } else {
+                const { uri } = await Print.printToFileAsync({ html: htmlContent, base64: false });
+                if (!(await Sharing.isAvailableAsync())) {
+                    Alert.alert('Erro', 'O compartilhamento não está disponível neste dispositivo.');
+                    setIsPrinting(false);
+                    return;
+                }
+                await Sharing.shareAsync(uri, {
+                    dialogTitle: 'Compartilhar Relatório',
+                    mimeType: 'application/pdf',
+                    UTI: '.pdf',
+                });
+            }
         } catch (error) {
-            console.error('Erro ao gerar ou compartilhar PDF:', error);
-            Alert.alert('Erro', 'Não foi possível gerar o PDF. ' + error.message);
+            console.error('Erro ao gerar relatório:', error);
+            Alert.alert('Erro', 'Não foi possível gerar o relatório. ' + error.message);
         } finally {
-            setIsPdfLoading(false);
+            const delay = Platform.OS === 'web' ? 1000 : 100;
+            setTimeout(() => setIsPrinting(false), delay);
         }
     };
 
@@ -171,22 +197,26 @@ export default function RelatorioPaciente({ navigation }) {
             return;
         }
         const html = gerarHtmlRelatorio(listaFiltrada);
-        handleGerarPdf(html, "relatorio_geral_pacientes.pdf");
+        handleGerarRelatorio(html);
     };
     const onGerarPdfUnico = (item) => {
         const html = gerarHtmlRelatorio([item]);
-        handleGerarPdf(html, `relatorio_${item.paciente_cpf || item.paciente_id}.pdf`);
+        handleGerarRelatorio(html);
     };
 
     const renderItem = ({ item }) => {
         const isExpanded = expandedId === item.paciente_id;
+        const nivelAnticorposFormatado = item.nivel_anticorpos 
+            ? `${item.nivel_anticorpos.toFixed(2)} BAU/mL`
+            : 'N/A';
+
         return (
             <TouchableOpacity 
+                key={item.paciente_id} 
                 style={Estilo.card} 
                 onPress={() => toggleExpand(item.paciente_id)}
                 activeOpacity={0.8}
             >
-                {/* Parte Visível (Resumo) */}
                 <View style={Estilo.cardHeader}>
                     <Text style={Estilo.cardTitle}>{item.paciente_nome || 'Paciente sem nome'}</Text>
                     <Feather name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color="#6c757d" />
@@ -199,8 +229,6 @@ export default function RelatorioPaciente({ navigation }) {
                     <Text style={Estilo.infoLabel}>Última Consulta:</Text>
                     <Text style={Estilo.infoValor}>{formatarData(item.agendamento_data_consulta)}</Text>
                 </View>
-
-                {/* Parte Expansível (Detalhes) */}
                 {isExpanded && (
                     <View style={Estilo.cardDetails}>
                         <View style={Estilo.separator} />
@@ -212,16 +240,23 @@ export default function RelatorioPaciente({ navigation }) {
                         <View style={Estilo.separator} />
                         <Text style={Estilo.cardSubTitle}>Último Agendamento</Text>
                         <View style={Estilo.infoRow}><Text style={Estilo.infoLabel}>Agend. ID:</Text><Text style={Estilo.infoValor}>{item.agendamento_id || 'N/A'}</Text></View>
-                        <View style={Estilo.infoRow}><Text style={Estilo.infoLabel}>Tipo Exame:</Text><Text style={Estilo.infoValor}>{item.agendamento_tipo_exame || 'N/A'}</Text></View>
-                        
-                        {/* Botão de PDF Individual */}
+                        <View style={Estilo.infoRow}><Text style={Estilo.infoLabel}>Tipo Exame:</Text><Text style={Estilo.infoValor}>{item.agendamento_tipo_exame || 'N/A'}</Text></View> 
+                        {item.agendamento_tipo_exame === 'covid' && (
+                            <View style={Estilo.infoRow}>
+                                <Text style={Estilo.infoLabel}>Nível Anticorpos:</Text>
+                                <Text style={Estilo.infoValor}>{nivelAnticorposFormatado}</Text>
+                            </View>
+                        )}
+
                         <TouchableOpacity 
                             style={Estilo.pdfButton}
                             onPress={() => onGerarPdfUnico(item)}
-                            disabled={isPdfLoading}
+                            disabled={isPrinting}
                         >
                             <Feather name="file-text" size={16} color="#FFF" />
-                            <Text style={Estilo.pdfButtonText}>Gerar PDF do Paciente</Text>
+                            <Text style={Estilo.pdfButtonText}>
+                                {Platform.OS === 'web' ? 'Imprimir Relatório' : 'Gerar PDF do Paciente'}
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -229,6 +264,7 @@ export default function RelatorioPaciente({ navigation }) {
         );
     };
 
+    // JSX com separação de FlatList (nativo) e ScrollView (web)
     return (
         <SafeAreaView style={Estilo.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
@@ -239,7 +275,6 @@ export default function RelatorioPaciente({ navigation }) {
                 <Text style={Estilo.headerTitle}>Relatório de Pacientes</Text>
             </View>
 
-            {/* Barra de Busca + Botão PDF Todos */}
             <View style={Estilo.toolbar}>
                 <TextInput
                     style={Estilo.searchInput}
@@ -251,35 +286,60 @@ export default function RelatorioPaciente({ navigation }) {
                 <TouchableOpacity 
                     style={Estilo.pdfTodosButton} 
                     onPress={onGerarPdfTodos}
-                    disabled={isPdfLoading || isLoading}
+                    disabled={isPrinting || isLoading}
                 >
-                    {isPdfLoading ? 
-                        <ActivityIndicator size="small" color="#FFF" /> : 
-                        <Feather name="download" size={20} color="#FFF" />
-                    }
+                    {isPrinting ? (
+                        <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                        <Feather 
+                            name={Platform.OS === 'web' ? "printer" : "download"} 
+                            size={20} 
+                            color="#FFF" 
+                        />
+                    )}
                 </TouchableOpacity>
             </View>
 
-            {/* Lista ou Loading */}
+            {/* Lógica de renderização por plataforma */}
             {isLoading ? (
                 <ActivityIndicator size="large" color="#2480F9" style={{ flex: 1 }} />
             ) : error ? (
                 <Text style={Estilo.emptyText}>Erro ao carregar: {error}</Text>
             ) : (
-                <FlatList
-                    data={listaFiltrada} 
-                    renderItem={renderItem}
-                    keyExtractor={item => item.paciente_id.toString()}
-                    contentContainerStyle={Estilo.listContent}
-                    ListEmptyComponent={
-                        <Text style={Estilo.emptyText}>
-                            {relatorioData.length === 0 
-                                ? "Nenhum paciente encontrado." 
-                                : "Nenhum paciente encontrado com esse nome."}
-                        </Text>
-                    }
-                    extraData={expandedId} 
-                />
+                <>
+                    {/* --- NATIVO (iOS/Android) --- */}
+                    {Platform.OS !== 'web' && (
+                        <FlatList
+                            data={listaFiltrada} 
+                            renderItem={renderItem}
+                            keyExtractor={item => item.paciente_id.toString()}
+                            contentContainerStyle={Estilo.listContent}
+                            ListEmptyComponent={
+                                <Text style={Estilo.emptyText}>
+                                    {relatorioData.length === 0 
+                                        ? "Nenhum paciente encontrado." 
+                                        : "Nenhum paciente encontrado com esse nome."}
+                                </Text>
+                            }
+                            extraData={expandedId} 
+                        />
+                    )}
+
+                    {/* --- WEB --- */}
+                    {Platform.OS === 'web' && (
+                        <ScrollView contentContainerStyle={Estilo.listContent}>
+                            {listaFiltrada.length > 0 ? (
+                                listaFiltrada.map(item => renderItem({ item }))
+                            ) : (
+                                <Text style={Estilo.emptyText}>
+                                    {relatorioData.length === 0 
+                                        ? "Nenhum paciente encontrado." 
+                                        : "Nenhum paciente encontrado com esse nome."}
+                                </Text>
+                            )}
+                        </ScrollView>
+                    )}
+                </>
             )}
         </SafeAreaView>
     );
@@ -399,7 +459,7 @@ const Estilo = StyleSheet.create({
         flex: 1, 
         marginLeft: 10,
     },
-    pdfButton: {
+    pdfButton: { 
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',

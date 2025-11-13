@@ -59,8 +59,8 @@ app.put('/pacientes/:id', checkAuth, checkRole(['ADM']), atualizarPaciente)
 app.post('/agendamentos', checkAuth, checkRole(['ADM']), criarAgendamento);
 app.get('/agendamentos', checkAuth, checkRole(['DEFAULT', 'ADM']), listarAgendamentos);
 app.delete('/agendamentos/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), deletarAgendamento);
-app.get('/agendamentos/:id', checkAuth, checkRole(['ADM']), obterAgendamento);
-app.put('/agendamentos/:id', checkAuth, checkRole(['ADM']), atualizarAgendamento);
+app.get('/agendamentos/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), obterAgendamento);
+app.put('/agendamentos/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), atualizarAgendamento);
 
 app.get('/exames', checkAuth, checkRole(['DEFAULT', 'ADM']), listarTodosExames);
 app.post('/exames/covid', criarExameCovid19);
