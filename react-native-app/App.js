@@ -11,6 +11,7 @@ import Funcionalidades from './src/pages/MainTabs/Funcionalidades/Funcionalidade
 import Perfil from './src/pages/MainTabs/Perfil/Perfil';
 import AlterarSenha from './src/pages/MainTabs/Perfil/AlterarSenha';
 import Paciente from './src/pages/MainTabs/Paciente/Paciente';
+import EditarPaciente from './src/pages/MainTabs/Paciente/EditarPaciente';
 import Exames from './src/pages/MainTabs/Exames/Exame';
 import Alunos from './src/pages/MainTabs/Alunos/Alunos';
 import ListagemAlunos from './src/pages/MainTabs/Alunos/ListagemAlunos';
@@ -19,6 +20,7 @@ import EditarAluno from './src/pages/MainTabs/Alunos/EditarAluno';
 import Agendamentos from './src/pages/MainTabs/Agendamentos/Agendamentos';
 import CadastroAgendamento from './src/pages/MainTabs/Agendamentos/CadastroAgendamento';
 import ListagemAgendamentos from './src/pages/MainTabs/Agendamentos/ListagemAgendamentos';
+import EdicaoAgendamento from './src/pages/MainTabs/Agendamentos/EdicaoAgendamento';
 import Relatorios from './src/pages/MainTabs/Relatorios/Relatorios';
 import RelatorioPaciente from './src/pages/MainTabs/Relatorios/RelatorioPaciente';
 import GraficoRelatorio from './src/pages/MainTabs/Relatorios/GraficoRelatorio';
@@ -82,12 +84,14 @@ export default function App() {
                 <Stack.Screen name="Pacientes" component={Paciente}/>
                 <Stack.Screen name="CadastroPacientes" component={CadastroPacientes}/>
                 <Stack.Screen name="ListagemPacientes" component={ListaPacientes}/>
+                <Stack.Screen name="EditarPaciente" component={EditarPaciente}/>
                 <Stack.Screen name="Exames" component={Exames}/>
                 <Stack.Screen name="CadastroExames" component={CadastroExames}/>
                 <Stack.Screen name="ListagemExames" component={ListagemExames}/>
                 <Stack.Screen name="Agendamentos" component={Agendamentos}/>
                 <Stack.Screen name="CadastroAgendamento" component={CadastroAgendamento}/>
                 <Stack.Screen name="ListagemAgendamentos" component={ListagemAgendamentos}/>
+                <Stack.Screen name="EdicaoAgendamento" component={EdicaoAgendamento}/>
                 <Stack.Screen name="Relatorios" component={Relatorios}/>
                 <Stack.Screen name="RelatorioPaciente" component={RelatorioPaciente}/>
                 <Stack.Screen name="GraficoRelatorio" component={GraficoRelatorio}/>

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
-
-const API_URL = 'http://localhost:3000';
+import api from "../../services/api"
 
 export default function RecuperarSenha({ navigation }) {
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // FUNÇÃO ATUALIZADA PARA USAR AXIOS 
     const handleRecuperar = async () => {
         if (!email) {
             Alert.alert('Atenção', 'Por favor, digite seu e-mail.');
@@ -16,20 +16,26 @@ export default function RecuperarSenha({ navigation }) {
         setIsLoading(true);
 
         try {
-            const response = await fetch(`${API_URL}/recuperar-senha`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email }),
+            // Usa api.post. O Axios já envia como JSON.
+            const response = await api.post('/recuperar-senha', {
+                email: email 
             });
 
-            const data = await response.json();
-
-            Alert.alert('Solicitação Enviada', data.message);
+            // No Axios, a resposta já vem em 'response.data'
+            Alert.alert('Solicitação Enviada', response.data.message);
             navigation.goBack(); 
 
         } catch (error) {
-            console.error(error);
-            Alert.alert('Erro', 'Não foi possível se conectar ao servidor.');
+            console.error(error); // Loga o erro completo
+            
+            // Tratamento de erro melhorado do Axios
+            if (error.response) {
+                Alert.alert('Erro', error.response.data.error || 'Não foi possível processar a solicitação.');
+            } else if (error.request) {
+                Alert.alert('Erro', 'Não foi possível se conectar ao servidor. Verifique sua rede.');
+            } else {
+                Alert.alert('Erro', 'Ocorreu um erro inesperado.');
+            }
         } finally {
             setIsLoading(false);
         }

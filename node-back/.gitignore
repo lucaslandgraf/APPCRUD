@@ -33,3 +33,8 @@ desktop.ini
 
 # Arquivos de e-mail temporários
 *.eml
+
+# --- Python ---
+.venv/
+*.pyc
+__pycache__/

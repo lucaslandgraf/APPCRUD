@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  SafeAreaProvider,
   View,
   Text,
   TextInput,
@@ -10,34 +9,70 @@ import {
   StyleSheet,
   StatusBar,
   Alert,
+  ActivityIndicator
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../../../services/api';
 import { Feather } from "@expo/vector-icons";
 
 export default function CadastroAgendamento({ navigation }) {
-  const [paciente, setPaciente] = useState("");
+  const [paciente_cpf, setPacienteCpf] = useState("");
   const [data, setData] = useState("");
-  const [hora, setHora] = useState("");
+  const [tipoExame, setTipoExame] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
-    if (!paciente || !data || !hora) {
-      Alert.alert("Erro", "Por favor, preencha os campos obrigatórios.");
+  const [exameDropdownOpen, setExameDropdownOpen] = useState(false);
+  const exames = [
+    { id: 1, nome: 'dengue' },
+    { id: 2, nome: 'covid' },
+    { id: 3, nome: 'abo' }
+  ];
+
+  const formatCpf = (text) => {
+    let cpf = text.replace(/\D/g, '');
+    if (cpf.length > 3) cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
+    if (cpf.length > 7) cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
+    if (cpf.length > 11) cpf = cpf.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    setPacienteCpf(cpf);
+  };
+
+  const handleSave = async () => {
+    const cpfLimpo = paciente_cpf.replace(/\D/g, '');
+    if (!cpfLimpo || !data || !tipoExame) {
+      Alert.alert("Erro", "Por favor, preencha os campos obrigatórios (CPF, Data e Tipo de Exame).");
       return;
     }
-
-    Alert.alert("Sucesso", "Agendamento cadastrado com sucesso!");
-    navigation.goBack();
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      await api.post('/agendamentos', {
+        paciente_cpf: cpfLimpo,
+        data_consulta: data,
+        tipo_exame: tipoExame,
+        descricao,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      Alert.alert("Sucesso", "Agendamento cadastrado com sucesso!");
+      navigation.goBack();
+    } catch (error) {
+      console.error('Erro ao cadastrar agendamento:', error);
+      if (error.response && error.response.status === 404) {
+        Alert.alert("Erro", "Paciente não encontrado para o CPF informado. Verifique o número.");
+      } else {
+        Alert.alert("Erro", "Não foi possível cadastrar o agendamento. Tente novamente.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoBack = () => {
-    navigation.goBack();
-  };
+  const handleGoBack = () => navigation.goBack();
 
   return (
     <SafeAreaView style={Estilo.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-
-      {/* Header */}
       <View style={Estilo.header}>
         <TouchableOpacity onPress={handleGoBack} style={Estilo.backButton}>
           <Text style={Estilo.backButtonText}>←</Text>
@@ -51,51 +86,88 @@ export default function CadastroAgendamento({ navigation }) {
         <Text style={Estilo.headerTitle}>Novo Agendamento</Text>
       </View>
 
-      {/* Form */}
       <ScrollView style={Estilo.content} keyboardShouldPersistTaps="handled">
-        <Text style={Estilo.label}>Paciente *</Text>
+        <Text style={Estilo.label}>CPF do Paciente *</Text>
         <TextInput
           style={Estilo.input}
-          placeholder="Nome do paciente"
-          value={paciente}
-          onChangeText={setPaciente}
+          placeholder="000.000.000-00"
+          value={paciente_cpf}
+          onChangeText={formatCpf}
+          keyboardType="numeric"
+          maxLength={14}
         />
 
-        <Text style={Estilo.label}>Data *</Text>
+        <Text style={Estilo.label}>Data da Consulta *</Text>
         <TextInput
           style={Estilo.input}
-          placeholder="DD/MM/AAAA"
+          placeholder="AAAA-MM-DD"
           value={data}
           onChangeText={setData}
-          keyboardType="numeric"
+          keyboardType="default"
         />
 
-        <Text style={Estilo.label}>Hora *</Text>
-        <TextInput
-          style={Estilo.input}
-          placeholder="HH:MM"
-          value={hora}
-          onChangeText={setHora}
-          keyboardType="numeric"
-        />
+        <Text style={Estilo.label}>Tipo de Exame *</Text>
+        <TouchableOpacity
+          style={Estilo.dropdownHeader}
+          onPress={() => setExameDropdownOpen(!exameDropdownOpen)}
+        >
+          <Text style={Estilo.dropdownHeaderText}>
+            {tipoExame ? tipoExame.toUpperCase() : "Selecione um exame..."}
+          </Text>
+          <Feather name={exameDropdownOpen ? 'chevron-up' : 'chevron-down'} size={20} />
+        </TouchableOpacity>
 
-        <Text style={Estilo.label}>Descrição</Text>
+        {exameDropdownOpen && (
+          <View style={Estilo.dropdownList}>
+            {exames.map((exame) => (
+              <TouchableOpacity
+                key={exame.id}
+                style={[
+                  Estilo.dropdownItem,
+                  tipoExame === exame.nome && Estilo.dropdownItemSelected,
+                ]}
+                onPress={() => {
+                  setTipoExame(exame.nome);
+                  setExameDropdownOpen(false);
+                }}
+              >
+                <Text
+                  style={[
+                    Estilo.dropdownItemText,
+                    tipoExame === exame.nome && Estilo.dropdownItemTextSelected,
+                  ]}
+                >
+                  {exame.nome.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        <Text style={Estilo.label}>Descrição (Opcional)</Text>
         <TextInput
           style={[Estilo.input, Estilo.textArea]}
-          placeholder="Informações adicionais"
+          placeholder="Informações adicionais sobre o agendamento"
           value={descricao}
           onChangeText={setDescricao}
           multiline
           numberOfLines={4}
         />
 
-        <TouchableOpacity style={Estilo.saveButton} onPress={handleSave}>
-          <Text style={Estilo.saveButtonText}>Salvar Agendamento</Text>
+        <TouchableOpacity
+          disabled={loading}
+          style={[Estilo.saveButton, loading && { opacity: 0.6 }]}
+          onPress={handleSave}
+        >
+          <Text style={Estilo.saveButtonText}>
+            {loading ? "Salvando..." : "Salvar Agendamento"}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
 
 const Estilo = StyleSheet.create({
   container: {
@@ -162,5 +234,41 @@ const Estilo = StyleSheet.create({
     color: "#ffffff",
     fontSize: 18,
     fontWeight: "600",
+  },
+  dropdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    marginBottom: 8,
+  },
+  dropdownHeaderText: {
+    fontSize: 16,
+    color: '#212529',
+  },
+  dropdownList: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  dropdownItem: {
+    padding: 12,
+  },
+  dropdownItemSelected: {
+    backgroundColor: '#2480f9',
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: '#212529',
+  },
+  dropdownItemTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });

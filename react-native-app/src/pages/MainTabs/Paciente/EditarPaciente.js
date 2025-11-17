@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
@@ -9,79 +9,93 @@ import {
   StyleSheet,
   StatusBar,
   Alert,
-  Platform,
+  ActivityIndicator,
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../../../services/api'; // Supondo que use a mesma api configurada para agendamento
+import api from '../../../services/api';
 import { Feather } from "@expo/vector-icons";
 
-export default function CadastroPacientes({ navigation }) {
-  const [nome, setNome] = useState('');
-  const [dataNascimento, setDataNascimento] = useState('');
-  const [endereco, setEndereco] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [observacoes, setObservacoes] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function EdicaoPaciente({ route, navigation }) {
+  const { pacienteId } = route.params; // Recebe o ID do paciente
 
-  const formatCpf = (text) => {
-    let cpf = text.replace(/\D/g, '');
-    if (cpf.length > 3) {
-      cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
+  const [nome, setNome] = useState("");
+  const [dataNascimento, setDataNascimento] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [observacoes, setObservacoes] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchPaciente = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        const response = await api.get(`/pacientes/${pacienteId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const paciente = response.data;
+        console.log(response.data);
+
+        setNome(paciente.nome);
+        setDataNascimento(paciente.data_nascimento);
+        setEndereco(paciente.endereco);
+        setTelefone(paciente.telefone);
+        setCpf(paciente.cpf);
+        setObservacoes(paciente.observacoes || "");
+      } catch (error) {
+        console.error('Erro ao carregar paciente:', error);
+        Alert.alert("Erro", "Não foi possível carregar os dados do paciente.");
+        navigation.goBack();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPaciente();
+  }, [pacienteId, navigation]);
+
+  const handleUpdate = async () => {
+    if (!nome || !dataNascimento || !cpf) {
+      Alert.alert("Erro", "Por favor, preencha os campos obrigatórios (Nome, Data de Nascimento e CPF).");
+      return;
     }
-    if (cpf.length > 7) {
-      cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
+
+    setSaving(true);
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      await api.put(`/pacientes/${pacienteId}`, {
+        nome,
+        data_nascimento: dataNascimento,
+        endereco,
+        telefone,
+        cpf,
+        observacoes,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      Alert.alert("Sucesso", "Paciente atualizado com sucesso!");
+      navigation.goBack();
+    } catch (error) {
+      console.error('Erro ao atualizar paciente:', error);
+      Alert.alert("Erro", "Não foi possível atualizar o paciente.");
+    } finally {
+      setSaving(false);
     }
-    if (cpf.length > 11) {
-      cpf = cpf.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    }
-    setCpf(cpf);
   };
 
   const handleGoBack = () => {
     navigation.goBack();
   };
 
-  const handleSave = async () => {
-    const cpfLimpo = cpf.replace(/\D/g, '');
-
-    if (!nome || !dataNascimento || !endereco || !telefone || !cpfLimpo) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const token = await AsyncStorage.getItem('authToken');
-
-      await api.post('/pacientes', {
-        nome,
-        data_nascimento: dataNascimento,
-        endereco,
-        telefone,
-        cpf: cpfLimpo,
-        observacoes: observacoes || null
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      Alert.alert('Sucesso', 'Paciente cadastrado com sucesso!');
-      // Limpa o formulário
-      setNome('');
-      setDataNascimento('');
-      setEndereco('');
-      setTelefone('');
-      setCpf('');
-      setObservacoes('');
-      navigation.goBack();
-
-    } catch (error) {
-      console.error('Erro ao cadastrar paciente:', error);
-      Alert.alert('Erro', 'Não foi possível cadastrar o paciente. Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (loading) {
+    return (
+      <View style={Estilo.loadingContainer}>
+        <ActivityIndicator size="large" color="#2480f9" />
+        <Text>Carregando Paciente...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={Estilo.container}>
@@ -93,11 +107,11 @@ export default function CadastroPacientes({ navigation }) {
         </TouchableOpacity>
         <Feather
           style={Estilo.headerIcon}
-          name="user-plus"
+          name="edit"
           size={27}
           color="rgba(36, 128, 249, 0.8)"
         />
-        <Text style={Estilo.headerTitle}>Cadastro de Paciente</Text>
+        <Text style={Estilo.headerTitle}>Editar Paciente</Text>
       </View>
 
       <ScrollView style={Estilo.content} keyboardShouldPersistTaps="handled">
@@ -107,7 +121,6 @@ export default function CadastroPacientes({ navigation }) {
           placeholder="Nome completo"
           value={nome}
           onChangeText={setNome}
-          autoCapitalize="words"
         />
 
         <Text style={Estilo.label}>Data de Nascimento *</Text>
@@ -119,16 +132,15 @@ export default function CadastroPacientes({ navigation }) {
           keyboardType="default"
         />
 
-        <Text style={Estilo.label}>Endereço *</Text>
+        <Text style={Estilo.label}>Endereço</Text>
         <TextInput
           style={Estilo.input}
           placeholder="Endereço completo"
           value={endereco}
           onChangeText={setEndereco}
-          autoCapitalize="words"
         />
 
-        <Text style={Estilo.label}>Telefone *</Text>
+        <Text style={Estilo.label}>Telefone</Text>
         <TextInput
           style={Estilo.input}
           placeholder="(XX) XXXXX-XXXX"
@@ -142,9 +154,8 @@ export default function CadastroPacientes({ navigation }) {
           style={Estilo.input}
           placeholder="000.000.000-00"
           value={cpf}
-          onChangeText={formatCpf}
+          onChangeText={setCpf}
           keyboardType="numeric"
-          maxLength={14}
         />
 
         <Text style={Estilo.label}>Observações</Text>
@@ -158,12 +169,12 @@ export default function CadastroPacientes({ navigation }) {
         />
 
         <TouchableOpacity
-          disabled={loading}
-          style={[Estilo.saveButton, loading && { opacity: 0.6 }]}
-          onPress={handleSave}
+          disabled={saving}
+          style={[Estilo.saveButton, saving && { opacity: 0.6 }]}
+          onPress={handleUpdate}
         >
           <Text style={Estilo.saveButtonText}>
-            {loading ? "Salvando..." : "Salvar Paciente"}
+            {saving ? "Salvando..." : "Atualizar Paciente"}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -174,6 +185,12 @@ export default function CadastroPacientes({ navigation }) {
 const Estilo = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f8f9fa",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: "#f8f9fa",
   },
   header: {
@@ -233,6 +250,18 @@ const Estilo = StyleSheet.create({
     marginTop: 10,
   },
   saveButtonText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  deleteButton: {
+    backgroundColor: "#dc3545",
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: "center",
+    marginTop: 15,
+  },
+  deleteButtonText: {
     color: "#ffffff",
     fontSize: 18,
     fontWeight: "600",

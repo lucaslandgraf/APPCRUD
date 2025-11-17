@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  SafeAreaProvider,
   View,
   Text,
   TouchableOpacity,
@@ -9,65 +8,79 @@ import {
   StyleSheet,
   StatusBar,
   Alert,
+  Platform,
 } from 'react-native';
-import { Octicons } from "@expo/vector-icons"; 
-
-const mockPacientes = [
-  { id: '1', nome: 'João Silva', idade: 34, cpf: '123.456.789-00' },
-  { id: '2', nome: 'Maria Oliveira', idade: 28, cpf: '987.654.321-00' },
-  { id: '3', nome: 'Carlos Pereira', idade: 45, cpf: '111.222.333-44' },
-];
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../../../services/api';
+import { Octicons } from '@expo/vector-icons';
 
 export default function ListaPacientes({ navigation }) {
+  const [pacientes, setPacientes] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const carregarPacientes = async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await api.get('/pacientes', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPacientes(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar pacientes:', error);
+      Alert.alert('Erro', 'Não foi possível carregar a lista de pacientes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    carregarPacientes();
+  }, []);
+
   const handleAddPatient = () => {
     navigation.navigate('CadastroPacientes');
   };
 
   const handleEditPatient = (paciente) => {
-    console.log('Editar Paciente:', paciente);
-    navigation.navigate('EditarPaciente', { paciente }); 
-  };
-  
-  const handleDeletePatient = (paciente) => {
-    Alert.alert(
-        "Confirmar exclusão",
-        `Tem certeza que deseja excluir o paciente ${paciente.nome}?`,
-        [
-            { text: "Cancelar", style: "cancel" },
-            {
-                text: "Excluir",
-                style: "destructive",
-                onPress: () => {
-                    // Lógica de exclusão real (API, estado, etc.)
-                    console.log('Excluir Paciente:', paciente.id);
-                    Alert.alert("Sucesso", `Paciente ${paciente.nome} excluído (simulado).`);
-                },
-            },
-        ]
-    );
+    navigation.navigate('EditarPaciente', { pacienteId: paciente.id }); // Passa paciente para edição
   };
 
-  const handleGoBack = () => {
-    navigation.goBack();
+  const handleDeletePatient = (paciente) => {
+    const confirmacao = window.confirm(
+      `Deseja realmente excluir o paciente ${paciente.nome} (ID: ${paciente.id})?`
+    );
+
+    if (confirmacao) {
+      const performDelete = async () => {
+        try {
+          const token = await AsyncStorage.getItem('authToken');
+          await api.delete(`/pacientes/${paciente.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          window.alert(`Sucesso! Paciente ${paciente.nome} excluído.`);
+          carregarPacientes();
+        } catch (error) {
+          console.error('Erro ao excluir paciente:', error);
+          window.alert('Erro', 'Não foi possível excluir o paciente. Verifique se a rota DELETE /pacientes/:id está configurada corretamente no back-end.');
+        }
+      };
+      performDelete();
+    }
   };
 
   return (
     <SafeAreaView style={Estilo.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-
+      
       <View style={Estilo.header}>
-        <TouchableOpacity onPress={handleGoBack} style={Estilo.backButton}>
-          <Text style={Estilo.backButtonText}>← Voltar</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={Estilo.backButton}>
+          <Text style={Estilo.backButtonText}>{'<-'} Voltar</Text>
         </TouchableOpacity>
-
         <Text style={Estilo.headerTitle}>Visualizar Pacientes</Text>
       </View>
 
-      <Text style={Estilo.description}>
-        Gerenciar cadastro de pacientes, histórico médico e informações pessoais.
-      </Text>
-
-      <TouchableOpacity style={Estilo.addCard} onPress={handleAddPatient}>
+      <TouchableOpacity style={Estilo.addCard} onPress={handleAddPatient} disabled={loading}>
         <View style={Estilo.addIconContainer}>
           <Text style={Estilo.addIcon}>+</Text>
         </View>
@@ -78,33 +91,32 @@ export default function ListaPacientes({ navigation }) {
       </TouchableOpacity>
 
       <ScrollView style={Estilo.content}>
-        {mockPacientes.map((paciente) => (
-          <View
-            key={paciente.id}
-            style={Estilo.patientCard}
-          >
+        {loading && <Text style={{textAlign: 'center'}}>Carregando...</Text>}
+        {!loading && pacientes.length === 0 && (
+          <Text style={{textAlign: 'center', marginTop: 20}}>Nenhum paciente cadastrado.</Text>
+        )}
+        {pacientes.map((paciente) => (
+          <View key={paciente.id} style={Estilo.patientCard}>
             <View style={Estilo.patientInfo}>
               <Text style={Estilo.patientName}>{paciente.nome}</Text>
               <Text style={Estilo.patientDetails}>
-                Idade: {paciente.idade} anos
+                Idade: {new Date().getFullYear() - new Date(paciente.data_nascimento).getFullYear()} anos
               </Text>
               <Text style={Estilo.patientDetails}>CPF: {paciente.cpf}</Text>
             </View>
-            
             <View style={Estilo.actionsContainer}>
-                <TouchableOpacity
-                    style={Estilo.actionButton}
-                    onPress={() => handleEditPatient(paciente)}
-                >
-                    <Octicons name="pencil" size={20} color="#2480f9" /> 
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[Estilo.actionButton, { marginLeft: 10 }]}
-                    onPress={() => handleDeletePatient(paciente)}
-                >
-                    <Octicons name="trash" size={20} color="#dc3545" /> 
-                </TouchableOpacity>
+              <TouchableOpacity
+                style={Estilo.actionButton}
+                onPress={() => handleEditPatient(paciente)}
+              >
+                <Octicons name="pencil" size={20} color="#2480f9" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[Estilo.actionButton, { marginLeft: 10 }]}
+                onPress={() => handleDeletePatient(paciente)}
+              >
+                <Octicons name="trash" size={20} color="#dc3545" />
+              </TouchableOpacity>
             </View>
           </View>
         ))}
@@ -118,8 +130,6 @@ const Estilo = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-
-  // Header Styles
   header: {
     backgroundColor: '#ffffff',
     flexDirection: 'row',
@@ -136,34 +146,11 @@ const Estilo = StyleSheet.create({
     fontSize: 16,
     color: '#4285f4',
   },
-  headerIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
   headerTitle: {
     fontSize: 24,
     fontWeight: '600',
     color: '#212529',
   },
-
-  // Description
-  description: {
-    fontSize: 16,
-    color: '#6c757d',
-    lineHeight: 24,
-    marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 10,
-  },
-
-  // Content Styles
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    marginTop: 10,
-  },
-
-  // Add Card Styles
   addCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
@@ -208,8 +195,11 @@ const Estilo = StyleSheet.create({
     color: '#6c757d',
     lineHeight: 20,
   },
-
-  // Patient Card Styles
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
   patientCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
@@ -239,16 +229,15 @@ const Estilo = StyleSheet.create({
     fontSize: 14,
     color: '#6c757d',
   },
-
-  actionsContainer: { 
-    flexDirection: "row",
+  actionsContainer: {
+    flexDirection: 'row',
     marginLeft: 16,
   },
   actionButton: {
     padding: 8,
     borderRadius: 6,
-    backgroundColor: "#e9f1ff", 
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#e9f1ff',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
