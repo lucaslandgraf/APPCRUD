@@ -5,7 +5,7 @@ import { Platform } from 'react-native'; // Importe o Platform
 // ** LÓGICA DE URL **
 const API_URL = Platform.OS === 'web' 
     ? 'http://localhost:3000' 
-    : 'http://192.168.15.7:3000';
+    : 'http://192.168.15.6:3000';
 
 const api = axios.create({
     baseURL: API_URL

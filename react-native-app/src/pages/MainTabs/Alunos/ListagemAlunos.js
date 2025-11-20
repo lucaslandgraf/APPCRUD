@@ -1,32 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-    View, Text, TouchableOpacity, FlatList, StyleSheet, StatusBar, Alert, Platform, ActivityIndicator
+    View, Text, TouchableOpacity, FlatList, StyleSheet, StatusBar, Alert, Platform, ActivityIndicator,
+    TextInput 
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-
-// Import do 'api.js' que já tem o interceptor de token
+import { useFocusEffect } from '@react-navigation/native'; 
 import api from '../../../services/api';
 
 export default function ListagemAlunos({ navigation }) {
-    const [alunos, setAlunos] = useState([]);
+    
+    const [alunos, setAlunos] = useState([]); // Lista mestra
+    const [listaFiltrada, setListaFiltrada] = useState([]); // Lista mostrada na tela
+    const [termoBusca, setTermoBusca] = useState(''); // Texto da busca
+
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
 
     const fetchAlunos = async () => {
         setError(null);
-        if (alunos.length === 0) setIsLoading(true);
+        // Só mostra o loading grande na primeira carga
+        if (alunos.length === 0) setIsLoading(true); 
+        
         try {
             const response = await api.get('/alunos');
-
-            // 4. No Axios, os dados vêm em 'response.data'
             let data = response.data;
-
-            // O 'if (!response.ok)' não é necessário, o Axios já trata erros no catch automaticamente.
-
             data.sort((a, b) => a.nome.localeCompare(b.nome));
-            setAlunos(data);
+            
+            setAlunos(data); 
+            
+            // Se não houver busca, atualiza a lista filtrada
+            if (termoBusca === '') {
+                setListaFiltrada(data);
+            }
+
         } catch (err) {
             let errorMessage = err.message;
             if (err.response && err.response.data && err.response.data.error) {
@@ -39,30 +47,39 @@ export default function ListagemAlunos({ navigation }) {
         }
     };
 
+    // useFocusEffect para recarregar os dados
+    useFocusEffect(
+        useCallback(() => {
+            fetchAlunos();
+        }, [])
+    );
+
+    // useEffect para filtrar a lista
+    // Roda toda vez que o 'termoBusca' ou a lista 'alunos' mudam
     useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', fetchAlunos);
-        return unsubscribe;
-    }, [navigation]);
+        if (termoBusca === '') {
+            setListaFiltrada(alunos);
+        } else {
+            const filtrados = alunos.filter(aluno =>
+                aluno.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
+                aluno.email.toLowerCase().includes(termoBusca.toLowerCase())
+            );
+            setListaFiltrada(filtrados);
+        }
+    }, [termoBusca, alunos]);
 
     const handleGoBack = () => { navigation.goBack(); };
     const handleEdit = (aluno) => { navigation.navigate('EditarAluno', { aluno: aluno }); };
-
     const handleDelete = (alunoParaExcluir) => {
         const executarExclusao = async () => {
             setIsDeleting(alunoParaExcluir.id);
             setError(null);
             try {
-                // O token será anexado aqui automaticamente
                 const response = await api.delete(`/alunos/${alunoParaExcluir.id}`);
-
-                // Os dados de sucesso vêm em 'response.data'
                 const data = response.data;
-
                 Alert.alert('Sucesso', data.message || 'Aluno excluído com sucesso.');
                 setAlunos(alunosAtuais => alunosAtuais.filter(a => a.id !== alunoParaExcluir.id));
-
             } catch (err) {
-                // Tratamento de erro do Axios
                 let errorMessage = err.message;
                 if (err.response && err.response.data && err.response.data.error) {
                     errorMessage = err.response.data.error;
@@ -74,7 +91,6 @@ export default function ListagemAlunos({ navigation }) {
                 setIsDeleting(null);
             }
         };
-
         const confirmMessage = `Excluir "${alunoParaExcluir.nome}" (ID: ${alunoParaExcluir.id})?`;
         if (Platform.OS === 'web') {
             if (window.confirm(confirmMessage)) {
@@ -88,53 +104,57 @@ export default function ListagemAlunos({ navigation }) {
         }
     };
 
-    // Renderização do cabeçalho
-    const renderTableHeader = () => (
-        <View style={[Estilo.row, Estilo.headerRow]}>
-            <Text style={[Estilo.columnHeader, Estilo.colID]}>ID</Text>
-            <Text style={[Estilo.columnHeader, Estilo.colNome]}>Nome</Text>
-            <Text style={[Estilo.columnHeader, Estilo.colEmail]}>E-mail</Text>
-            <Text style={[Estilo.columnHeader, Estilo.colRol]}>Rol</Text>
-            <Text style={[Estilo.columnHeader, Estilo.colAcoes]}>Ações</Text>
-        </View>
-    );
-
-    // Renderização de cada item
+    // Renderização do item como CARD
     const renderItem = ({ item }) => (
-        <View style={Estilo.row}>
-            <Text style={[Estilo.cell, Estilo.colID]}>{item.id}</Text>
-            <Text style={[Estilo.cell, Estilo.colNome]} numberOfLines={1}>{item.nome}</Text>
-            <Text style={[Estilo.cell, Estilo.colEmail]} numberOfLines={1}>{item.email}</Text>
-            <View style={[Estilo.cell, Estilo.colRol, Estilo.rolContainer]}>
-                <Text style={[Estilo.rolBadge, Estilo[`rol_${item.rol}`] || Estilo.rol_DEFAULT]}>{item.rol}</Text>
+        <View style={Estilo.card}>
+            {/* Seção 1: Nome e "Tag" do Papel (Rol) */}
+            <View style={Estilo.cardHeader}>
+                <Text style={Estilo.cardTitle} numberOfLines={1}>{item.nome}</Text>
+                <View style={[Estilo.rolBadge, Estilo[`rol_${item.rol}`] || Estilo.rol_DEFAULT]}>
+                    <Text style={Estilo.rolBadgeText}>{item.rol}</Text>
+                </View>
             </View>
-            <View style={[Estilo.cell, Estilo.colAcoes, Estilo.actionsContainer]}>
-                <TouchableOpacity onPress={() => handleEdit(item)} style={Estilo.actionButton} disabled={isDeleting === item.id}>
-                    <Feather name="edit" size={16} color={isDeleting === item.id ? '#ccc' : "#4285f4"} />
+
+            {/* Seção 2: Informações (Email e ID) */}
+            <View style={Estilo.cardBody}>
+                <View style={Estilo.infoRow}>
+                    <Feather name="mail" size={14} color="#6c757d" style={Estilo.infoIcon} />
+                    <Text style={Estilo.infoText} numberOfLines={1}>{item.email}</Text>
+                </View>
+                <View style={Estilo.infoRow}>
+                    <Feather name="hash" size={14} color="#6c757d" style={Estilo.infoIcon} />
+                    <Text style={Estilo.infoText}>ID: {item.id}</Text>
+                </View>
+            </View>
+
+            {/* Seção 3: Botões de Ação */}
+            <View style={Estilo.cardFooter}>
+                <TouchableOpacity 
+                    style={[Estilo.actionButton, Estilo.editButton]} 
+                    onPress={() => handleEdit(item)} 
+                    disabled={isDeleting === item.id}
+                >
+                    <Feather name="edit" size={16} color="#0056b3" />
+                    <Text style={Estilo.actionButtonText}>Editar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDelete(item)} style={Estilo.actionButton} disabled={isDeleting === item.id}>
-                    {isDeleting === item.id ? (<ActivityIndicator size="small" color="#dc3545" />)
-                        : (<Feather name="trash-2" size={16} color="#dc3545" />)}
+
+                <TouchableOpacity 
+                    style={[Estilo.actionButton, Estilo.deleteButton]} 
+                    onPress={() => handleDelete(item)} 
+                    disabled={isDeleting === item.id}
+                >
+                    {isDeleting === item.id ? (
+                        <ActivityIndicator size="small" color="#dc3545" />
+                    ) : (
+                        <>
+                            <Feather name="trash-2" size={16} color="#dc3545" />
+                            <Text style={[Estilo.actionButtonText, Estilo.deleteButtonText]}>Excluir</Text>
+                        </>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>
     );
-
-    const renderContent = () => {
-        if (isLoading) { return <ActivityIndicator size="large" color="#4285f4" style={{ marginTop: 50 }} />; }
-        if (error && alunos.length === 0) { return <Text style={Estilo.emptyText}>Erro ao carregar: {error}</Text>; }
-        return (
-            <FlatList
-                data={alunos}
-                keyExtractor={item => item.id.toString()}
-                renderItem={renderItem}
-                ListHeaderComponent={renderTableHeader}
-                contentContainerStyle={Estilo.content}
-                ListEmptyComponent={<Text style={Estilo.emptyText}>Nenhum aluno cadastrado.</Text>}
-                extraData={isDeleting}
-            />
-        );
-    };
 
     return (
         <SafeAreaView style={Estilo.container}>
@@ -145,7 +165,39 @@ export default function ListagemAlunos({ navigation }) {
                 </TouchableOpacity>
                 <Text style={Estilo.pageTitle}>Listagem de Alunos</Text>
             </View>
-            {renderContent()}
+
+            {/* Barra de Busca */}
+            <View style={Estilo.searchContainer}>
+                <Feather name="search" size={20} color="#888" style={Estilo.searchIcon} />
+                <TextInput
+                    style={Estilo.searchInput}
+                    placeholder="Buscar por nome ou e-mail..."
+                    placeholderTextColor="#888"
+                    value={termoBusca}
+                    onChangeText={setTermoBusca}
+                />
+            </View>
+
+            {/* Conteúdo (Loading, Erro ou a Lista) */}
+            {isLoading ? (
+                <ActivityIndicator size="large" color="#4285f4" style={{ marginTop: 50 }} />
+            ) : error ? (
+                <Text style={Estilo.emptyText}>Erro ao carregar: {error}</Text>
+            ) : (
+                <FlatList
+                    data={listaFiltrada} // Usa a lista filtrada
+                    keyExtractor={item => item.id.toString()}
+                    renderItem={renderItem}
+                    // ListHeaderComponent removido
+                    contentContainerStyle={Estilo.content}
+                    ListEmptyComponent={
+                        <Text style={Estilo.emptyText}>
+                            {alunos.length === 0 ? "Nenhum aluno cadastrado." : "Nenhum aluno encontrado com esse nome/e-mail."}
+                        </Text>
+                    }
+                    extraData={isDeleting} // Para re-renderizar o item durante a exclusão
+                />
+            )}
         </SafeAreaView>
     );
 }
@@ -153,112 +205,151 @@ export default function ListagemAlunos({ navigation }) {
 const Estilo = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa'
+        backgroundColor: '#f8f9fa' 
     },
     pageHeader: {
         backgroundColor: '#ffffff',
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 20,
+        paddingVertical: 15,
         borderBottomWidth: 1,
-        borderBottomColor: '#e9ecef'
+        borderBottomColor: '#e9ecef',
+        elevation: 2,
     },
     backButton: {
         marginRight: 10,
-        paddingRight: 10
+        padding: 5, 
     },
     backButtonText: {
         fontSize: 16,
-        color: '#4285f4'
+        color: '#4285f4',
     },
     pageTitle: {
         fontSize: 20,
         fontWeight: '600',
-        color: '#212529'
+        color: '#212529',
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        paddingHorizontal: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e9ecef',
+    },
+    searchIcon: {
+        marginRight: 10,
+    },
+    searchInput: {
+        flex: 1,
+        height: 50, 
+        fontSize: 16,
+        color: '#333',
     },
     content: {
-        paddingHorizontal: 10,
-        paddingTop: 10,
-        paddingBottom: 20
-    },
-    row: {
-        flexDirection: 'row',
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        alignItems: 'center',
-        backgroundColor: '#fff'
-    },
-    headerRow: {
-        backgroundColor: '#e9ecef',
-        borderBottomWidth: 2,
-        borderBottomColor: '#ced4da',
-        paddingVertical: 12,
-        marginHorizontal: -10,
-        paddingHorizontal: 10
-    },
-    columnHeader: {
-        fontWeight: 'bold',
-        fontSize: 14,
-        color: '#343a40',
-        textAlign: 'center'
-    },
-    cell: {
-        fontSize: 13,
-        color: '#495057',
-        paddingHorizontal: 5,
-        textAlign: 'center'
-    },
-    colID: {
-        width: 35
-    },
-    colNome: {
-        flex: 1.8,
-        textAlign: 'left',
-        paddingLeft: 8
-    },
-    colEmail: {
-        flex: 1.8,
-        textAlign: 'left'
-    },
-    colRol: {
-        width: 65
-    },
-    colAcoes: {
-        width: 70
-    },
-    rolContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 0
-    },
-    rolBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 12,
-        fontSize: 11,
-        fontWeight: 'bold',
-        color: '#fff'
-    },
-    rol_ADM: {
-        backgroundColor: '#dc3545'
-    },
-    rol_DEFAULT: {
-        backgroundColor: '#00a6ffff'
-    },
-    actionsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center'
-    },
-    actionButton: {
-        padding: 5
+        padding: 15, 
     },
     emptyText: {
         textAlign: 'center',
         marginTop: 50,
         fontSize: 16,
-        color: '#6c757d'
+        color: '#6c757d',
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#e9ecef', 
+        elevation: 3, 
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 12,
+    },
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#212529',
+        flex: 1, 
+        marginRight: 10,
+    },
+    rolBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        alignSelf: 'flex-start', 
+    },
+    rolBadgeText: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        color: '#fff',
+        textTransform: 'uppercase',
+    },
+    rol_ADM: {
+        backgroundColor: '#dc3545', 
+    },
+    rol_DEFAULT: {
+        backgroundColor: '#00a6ffff', 
+    },
+    cardBody: {
+        marginBottom: 15,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 5,
+    },
+    infoIcon: {
+        marginRight: 8,
+    },
+    infoText: {
+        fontSize: 14,
+        color: '#495057',
+        flex: 1, 
+    },
+    cardFooter: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        borderTopWidth: 1,
+        borderTopColor: '#f1f1f1',
+        paddingTop: 12,
+        marginTop: 5,
+        gap: 10, 
+    },
+    actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+    },
+    actionButtonText: {
+        fontSize: 14,
+        fontWeight: '500',
+        marginLeft: 6,
+    },
+    editButton: {
+        backgroundColor: '#e3f2fd', 
+    },
+    actionButtonText: {
+        color: '#0056b3', 
+        fontSize: 14,
+        fontWeight: '500',
+        marginLeft: 6,
+    },
+    deleteButton: {
+         backgroundColor: '#fbe9e7', 
+    },
+    deleteButtonText: {
+        color: '#dc3545', 
     }
 });

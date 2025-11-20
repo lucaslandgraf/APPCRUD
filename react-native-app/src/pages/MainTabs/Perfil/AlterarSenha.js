@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
-
-// API_URL Universal (para web e nativo)
-const API_URL = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://192.168.15.7:3000';
+import api from '../../../services/api'; 
 
 export default function AlterarSenha({ navigation }) {
     const [email, setEmail] = useState('');
@@ -12,6 +10,7 @@ export default function AlterarSenha({ navigation }) {
     const [confirmarSenha, setConfirmarSenha] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // FUNÇÃO USA AXIOS
     const handleSalvar = async () => {
         if (!email || !senhaAtual || !novaSenha || !confirmarSenha) {
             Alert.alert('Atenção', 'Por favor, preencha todos os campos.');
@@ -24,24 +23,31 @@ export default function AlterarSenha({ navigation }) {
         setIsLoading(true);
 
         try {
-            const response = await fetch(`${API_URL}/alterar-senha`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, senhaAtual, novaSenha }),
+            // Usa api.post. O Axios já envia como JSON.
+            // O token de autenticação será anexado automaticamente pelo api.js
+            const response = await api.post('/alterar-senha', {
+                email,
+                senhaAtual,
+                novaSenha
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
-                Alert.alert('Sucesso!', data.message);
-                navigation.goBack(); // Volta para a tela de Perfil
-            } else {
-                Alert.alert('Erro', data.error || 'Não foi possível alterar a senha.');
-            }
+            // No Axios, o sucesso (HTTP 2xx) cai aqui.
+            Alert.alert('Sucesso!', response.data.message);
+            navigation.goBack();
 
         } catch (error) {
+            // O Axios trata erros
             console.error(error);
-            Alert.alert('Erro', 'Não foi possível se conectar ao servidor.');
+            if (error.response) {
+                // Erro vindo do servidor (ex: senha atual incorreta)
+                Alert.alert('Erro', error.response.data.error || 'Não foi possível alterar a senha.');
+            } else if (error.request) {
+                // Erro de rede (não conseguiu se conectar)
+                Alert.alert('Erro', 'Não foi possível se conectar ao servidor.');
+            } else {
+                // Outro erro
+                Alert.alert('Erro', 'Ocorreu um erro inesperado.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -87,7 +93,6 @@ export default function AlterarSenha({ navigation }) {
         </View>
     )
 }
-
 
 const Estilo = StyleSheet.create({
     container: {
