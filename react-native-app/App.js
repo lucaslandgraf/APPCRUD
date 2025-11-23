@@ -28,7 +28,7 @@ import CadastroPacientes from './src/pages/MainTabs/Paciente/CadastroPaciente';
 import ListaPacientes from './src/pages/MainTabs/Paciente/ListagemPacientes';
 import CadastroExames from './src/pages/MainTabs/Exames/CadastroExames';
 import ListagemExames from './src/pages/MainTabs/Exames/ListagemExames';
-
+import EdicaoExame from './src/pages/MainTabs/Exames/EdicaoExames';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -88,6 +88,7 @@ export default function App() {
                 <Stack.Screen name="Exames" component={Exames}/>
                 <Stack.Screen name="CadastroExames" component={CadastroExames}/>
                 <Stack.Screen name="ListagemExames" component={ListagemExames}/>
+                <Stack.Screen name="EdicaoExames" component={EdicaoExame}/>
                 <Stack.Screen name="Agendamentos" component={Agendamentos}/>
                 <Stack.Screen name="CadastroAgendamento" component={CadastroAgendamento}/>
                 <Stack.Screen name="ListagemAgendamentos" component={ListagemAgendamentos}/>
