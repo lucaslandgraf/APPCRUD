@@ -7,7 +7,7 @@ const { cadastroUsuario, loginUsuario, recuperarSenha, alterarSenha } = require(
 const { listarAlunos, cadastrarAluno, excluirAluno, atualizarAluno } = require('../modules/alunos/controller/alunoController');
 const { listarPacientes, criarPaciente, atualizarPaciente, obterPaciente, deletarPaciente } = require('../modules/paciente/controller/PacienteController')
 const { listarAgendamentos, deletarAgendamento, criarAgendamento, atualizarAgendamento, obterAgendamento } = require('../modules/agendamento/controller/AgendamentoController');
-const { listarTodosExames, criarExameCovid19, criarExameDengue, criarExameAbo, listarExameCovid19, listarExameAbo, listarExameDengue } = require('../modules/exames/controller/ExamesController');
+const { listarTodosExames, criarExameCovid19, criarExameDengue, criarExameAbo, listarExameCovid19, listarExameAbo, listarExameDengue, atualizarExameAbo, atualizarExameCovid19, atualizarExameDengue, obterExameAbo, obterExameCovid19, obterExameDengue, deletarExameAbo, deletarExameDengue, deletarExameCovid19 } = require('../modules/exames/controller/ExamesController');
 const { gerarRelatorioGeral, gerarGraficoRegressao } = require('../modules/relatorio/controller/relatorioController');
 const { getDashboardStats } = require('../modules/dashboard/controller/dashboardController'); 
 const { checkAuth, checkRole } = require('../middlewares/authMiddleware');
@@ -69,6 +69,15 @@ app.post('/exames/abo', criarExameAbo);
 app.get('/exames/covid', listarExameCovid19);
 app.get('/exames/dengue', listarExameDengue);
 app.get('/exames/abo', listarExameAbo);
+app.get('/exames/covid/:id', obterExameCovid19);
+app.get('/exames/dengue/:id', obterExameDengue);
+app.get('/exames/abo/:id', obterExameAbo);
+app.put('/exames/dengue/:id', atualizarExameDengue);
+app.put('/exames/covid/:id', atualizarExameCovid19);
+app.put('/exames/abo/:id', atualizarExameAbo);
+app.delete('/exames/abo/:id', deletarExameAbo);
+app.delete('/exames/dengue/:id', deletarExameDengue);
+app.delete('/exames/covid/:id', deletarExameCovid19);
 
 // ROTA DE RELATÓRIOS
 app.get('/relatorios', checkAuth, checkRole(['DEFAULT', 'ADM']), gerarRelatorioGeral);
