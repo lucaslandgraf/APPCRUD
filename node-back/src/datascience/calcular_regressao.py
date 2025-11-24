@@ -24,6 +24,8 @@ def main():
             'database': 'sps-mobile'  
         }
 
+        # Filtro para pegar apenas resultados 'Positivo' 
+
         sql_query = """
             SELECT 
                 p.data_nascimento,
@@ -32,7 +34,8 @@ def main():
             JOIN paciente p ON e.paciente_id = p.id
             WHERE 
                 e.nivel_anticorpos IS NOT NULL 
-                AND p.data_nascimento IS NOT NULL;
+                AND p.data_nascimento IS NOT NULL
+                AND e.resultado = 'Positivo';
         """
         
         db = mysql.connector.connect(**db_config)
@@ -41,7 +44,7 @@ def main():
         df = pd.read_sql(sql_query, db)
 
         if len(df) < 2:
-            raise Exception("Dados insuficientes para calcular a regressão (mínimo 2 pontos).")
+            raise Exception("Dados insuficientes para calcular a regressão (mínimo 2 casos positivos).")
 
         # Converte colunas
         df['data_nascimento'] = pd.to_datetime(df['data_nascimento'])
@@ -49,27 +52,28 @@ def main():
         
         df['idade'] = df['data_nascimento'].apply(calcular_idade)
         
+        # Conversão para float nativo do Python
         aed_idade = {
-            "media": df['idade'].mean(),
-            "mediana": df['idade'].median(),
-            "moda": df['idade'].mode()[0] if not df['idade'].mode().empty else None, 
-            "variancia": df['idade'].var(),
-            "desvio_padrao": df['idade'].std(),
-            "amplitude": df['idade'].max() - df['idade'].min(),
-            "min": df['idade'].min(),
-            "max": df['idade'].max()
+            "media": float(df['idade'].mean()),
+            "mediana": float(df['idade'].median()),
+            "moda": float(df['idade'].mode()[0]) if not df['idade'].mode().empty else None, 
+            "variancia": float(df['idade'].var()),
+            "desvio_padrao": float(df['idade'].std()),
+            "amplitude": float(df['idade'].max() - df['idade'].min()),
+            "min": float(df['idade'].min()),
+            "max": float(df['idade'].max())
         }
         
         Y_df = df['nivel_anticorpos']
         aed_anticorpos = {
-            "media": Y_df.mean(),
-            "mediana": Y_df.median(),
-            "moda": Y_df.mode()[0] if not Y_df.mode().empty else None,
-            "variancia": Y_df.var(),
-            "desvio_padrao": Y_df.std(),
-            "amplitude": Y_df.max() - Y_df.min(),
-            "min": Y_df.min(),
-            "max": Y_df.max()
+            "media": float(Y_df.mean()),
+            "mediana": float(Y_df.median()),
+            "moda": float(Y_df.mode()[0]) if not Y_df.mode().empty else None,
+            "variancia": float(Y_df.var()),
+            "desvio_padrao": float(Y_df.std()),
+            "amplitude": float(Y_df.max() - Y_df.min()),
+            "min": float(Y_df.min()),
+            "max": float(Y_df.max())
         }
 
         # CALCULAR REGRESSÃO COM STATSMODELS
@@ -78,10 +82,10 @@ def main():
         X = sm.add_constant(X) 
         model = sm.OLS(Y, X).fit()
 
-        alpha = model.params['const']
-        beta = model.params['idade']
-        r2 = model.rsquared
-        p_value_beta = model.pvalues['idade']
+        alpha = float(model.params['const'])
+        beta = float(model.params['idade'])
+        r2 = float(model.rsquared)
+        p_value_beta = float(model.pvalues['idade'])
         
         data_points = df.rename(columns={'idade': 'x', 'nivel_anticorpos': 'y'})[['x', 'y']].to_dict('records')
 
@@ -100,15 +104,13 @@ def main():
             }
         }
 
-        print(json.dumps(resultados)) # Envia o JSON final para o Node.js
+        print(json.dumps(resultados)) 
 
     except Exception as e:
-        # Imprime o erro no stderr para o Node.js capturar
         print(json.dumps({"error": str(e)}), file=sys.stderr)
         sys.exit(1)
         
     finally:
-        # Garante que a conexão com o banco seja fechada
         if db and db.is_connected():
             db.close()
 

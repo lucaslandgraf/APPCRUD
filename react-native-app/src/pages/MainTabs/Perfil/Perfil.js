@@ -10,7 +10,7 @@ export default function Perfil({ navigation }) {
     const [usuario, setUsuario] = useState(null);
 
     // useFocusEffect roda toda vez que a tela/aba "Perfil" ganha foco
-    // Isso é melhor que useEffect, pois atualiza se o usuário mudar de dados
+
     useFocusEffect(
         useCallback(() => {
             const loadUserData = async () => {
@@ -32,10 +32,8 @@ export default function Perfil({ navigation }) {
     const doLogoutAction = async () => {
         console.log("Usuário confirmou o logout.");
         try {
-            // --- LINHA MAIS IMPORTANTE ---
             // Limpa TODO o AsyncStorage (token, rol, usuario, etc.)
             await AsyncStorage.clear();
-            // -----------------------------
 
             console.log("AsyncStorage limpo. Resetando navegação...");
             navigation.getParent().reset({
@@ -86,7 +84,6 @@ export default function Perfil({ navigation }) {
                         <Text style={Estilo.topSubtitle}>{usuario.rol === 'ADM' ? 'Administrador' : 'Usuário Padrão'}</Text>
                     </View>
                 </View>
-
                 {/* Botões */}
                 <View style={Estilo.botoes}>
                     <TouchableOpacity
@@ -101,7 +98,6 @@ export default function Perfil({ navigation }) {
                             <Text style={Estilo.subtitle}>Mudar sua senha de acesso</Text>
                         </View>
                     </TouchableOpacity>
-
                     {/* Botão Sair chama handleLogout */}
                     <TouchableOpacity style={Estilo.button} onPress={handleLogout}>
                          <View style={Estilo.icon}>
@@ -114,8 +110,6 @@ export default function Perfil({ navigation }) {
                     </TouchableOpacity>
                 </View>
             </View>
-
-            {/* Rodapé (sem mudanças) */}
             <View style={Estilo.footer}>
                 <Text style={Estilo.textfooter}>© 2025 Sistema Positivo de Saúde</Text>
                 <Text style={Estilo.subtextfooter}>Todos os direitos reservados.</Text>

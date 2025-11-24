@@ -1,13 +1,21 @@
-const pool = require('../../../db/mysqlConnect'); // importar pool de conexão
+const pool = require('../../../db/mysqlConnect'); 
 
 async function listarTodosExames(req, res) {
   try {
-    // Consultas paralelas
-    const [dengue] = await pool.execute('SELECT * FROM exame_dengue');
-    const [abo] = await pool.execute('SELECT * FROM exame_abo');
-    const [covid] = await pool.execute('SELECT * FROM exame_covid_19');
+    // Template de Query para buscar o exame + nome do paciente + data do agendamento
+    const queryBase = (tabela) => `
+      SELECT e.*, p.nome AS nomePaciente, a.data_consulta AS dataConsulta
+      FROM ${tabela} e
+      LEFT JOIN paciente p ON e.paciente_id = p.id
+      LEFT JOIN agendamento a ON e.agendamento_id = a.id
+    `;
 
-    // Adiciona o campo tipo para diferenciar
+    // Executa as consultas para os 3 tipos de exames
+    const [dengue] = await pool.execute(queryBase('exame_dengue'));
+    const [abo] = await pool.execute(queryBase('exame_abo'));
+    const [covid] = await pool.execute(queryBase('exame_covid_19'));
+
+    // Junta tudo num único array e adiciona o campo 'tipo'
     const exames = [
       ...dengue.map(e => ({ ...e, tipo: 'Dengue' })),
       ...abo.map(e => ({ ...e, tipo: 'ABO' })),
@@ -21,8 +29,9 @@ async function listarTodosExames(req, res) {
   }
 }
 
+// CRUD INDIVIDUAL (ABO, COVID, DENGUE)
 
-// ----- exame_abo -----
+// exame_abo
 
 async function listarExameAbo(req, res) {
   try {
@@ -95,7 +104,7 @@ async function deletarExameAbo(req, res) {
   }
 }
 
-// ----- exame_covid_19 -----
+// exame_covid_19 
 
 async function listarExameCovid19(req, res) {
   try {
@@ -180,7 +189,7 @@ async function deletarExameCovid19(req, res) {
   }
 }
 
-// ----- exame_dengue -----
+// exame_dengue
 
 async function listarExameDengue(req, res) {
   try {

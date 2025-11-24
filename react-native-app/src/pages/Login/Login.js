@@ -9,7 +9,7 @@ export default function Login({ navigation }) {
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
 
-    // --- FUNÇÃO DE LOGIN  ---
+    // FUNÇÃO DE LOGIN 
     const handleLogin = async () => {
         if (!email || !senha) {
             Alert.alert('Atenção', 'Por favor, preencha o e-mail e a senha.');
@@ -43,13 +43,11 @@ export default function Login({ navigation }) {
             }
 
         } catch (error) {
-            // 6. Tratamento de erro do Axios
+            // Tratamento de erro do Axios
             console.error("Erro no login:", error);
             if (error.response) {
-                // O servidor respondeu com um erro (401, 403, 500, etc)
                 Alert.alert('Erro', error.response.data.error || 'Credenciais inválidas.');
             } else if (error.request) {
-                // A requisição foi feita, mas o servidor não respondeu (offline)
                 Alert.alert('Erro de Conexão', 'Não foi possível se conectar ao servidor.');
             } else {
                 Alert.alert('Erro', 'Ocorreu um erro inesperado.');

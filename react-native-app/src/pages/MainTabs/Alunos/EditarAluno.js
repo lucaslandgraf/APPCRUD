@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Alert } from 'react-native'; // Platform não é mais necessário
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Alert } from 'react-native'; 
 import { Picker } from '@react-native-picker/picker';
 
-import api from '../../../services/api'; // Importa o api.js
+import api from '../../../services/api'; 
 
 export default function EditarAluno({ navigation, route }) {
     const alunoParaEditar = route.params?.aluno;

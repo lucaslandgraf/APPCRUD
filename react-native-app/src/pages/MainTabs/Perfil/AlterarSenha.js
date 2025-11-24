@@ -45,7 +45,6 @@ export default function AlterarSenha({ navigation }) {
                 // Erro de rede (não conseguiu se conectar)
                 Alert.alert('Erro', 'Não foi possível se conectar ao servidor.');
             } else {
-                // Outro erro
                 Alert.alert('Erro', 'Ocorreu um erro inesperado.');
             }
         } finally {

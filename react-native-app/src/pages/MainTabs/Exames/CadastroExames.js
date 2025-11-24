@@ -20,10 +20,8 @@ export default function CadastroExameDinamico({ navigation }) {
   const [agendamentosPaciente, setAgendamentosPaciente] = useState([]);
 
   const [loadingDados, setLoadingDados] = useState(true);
-
   const [searchPaciente, setSearchPaciente] = useState("");
   const [filteredPacientes, setFilteredPacientes] = useState([]);
-
   const [pacienteDropdownOpen, setPacienteDropdownOpen] = useState(false);
 
   const [selectedPacienteId, setSelectedPacienteId] = useState(null);
@@ -31,21 +29,38 @@ export default function CadastroExameDinamico({ navigation }) {
 
   const [tipoExame, setTipoExame] = useState("");
   const [nome, setNome] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [amostraSangue, setAmostraSangue] = useState("");
-  const [dataInicioSintomas, setDataInicioSintomas] = useState("");
+  const [dataInicioSintomas, setDataInicioSintomas] = useState(""); // Dengue
+
   const [amostraDna, setAmostraDna] = useState("");
   const [tipoSanguineo, setTipoSanguineo] = useState("");
   const [obsAbo, setObsAbo] = useState("");
+
   const [tipoTeste, setTipoTeste] = useState("");
   const [statusAmostra, setStatusAmostra] = useState("");
   const [resultado, setResultado] = useState("");
-  const [dataInicioSintomasCovid, setDataInicioSintomasCovid] = useState("");
+  const [dataInicioSintomasCovid, setDataInicioSintomasCovid] = useState(""); // Covid
   const [sintomas, setSintomas] = useState("");
   const [obsCovid, setObsCovid] = useState("");
   const [nivelAnticorpos, setNivelAnticorpos] = useState("");
 
-  const [loading, setLoading] = useState(false);
+  // FUNÇÕES DE DATA 
+  const formatDataVisual = (text, setFunction) => {
+    let textoLimpo = text.replace(/\D/g, '');
+    if (textoLimpo.length > 2) textoLimpo = textoLimpo.replace(/^(\d{2})(\d)/, '$1/$2');
+    if (textoLimpo.length > 5) textoLimpo = textoLimpo.replace(/^(\d{2})\/(\d{2})(\d)/, '$1/$2/$3');
+    setFunction(textoLimpo);
+  };
+
+  const converterDataParaBanco = (dataBrasileira) => {
+    if (!dataBrasileira || dataBrasileira.length !== 10) return null;
+    const parts = dataBrasileira.split('/');
+    if (parts.length !== 3) return null;
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  };
+
 
   useEffect(() => {
     async function fetchDados() {
@@ -122,100 +137,85 @@ export default function CadastroExameDinamico({ navigation }) {
   const handleGoBack = () => navigation.goBack();
 
   const validarCampos = () => {
-  console.log("Validando campos...");
-  if (!selectedPacienteId) {
-    Alert.alert("Erro", "Selecione um paciente.");
-    return console.log("Falhou 1");
-  }
-  if (!selectedAgendamentoId) {
-    Alert.alert("Erro", "Selecione um agendamento.");
-    return console.log("Falhou 2");
-  }
-  if (!tipoExame) {
-    Alert.alert("Erro", "Selecione o tipo de exame.");
-    return console.log("Falhou 23");
-  }
-  if (!nome) {
-    Alert.alert("Erro", "Informe o nome do exame.");
-    return console.log("Falhou 4");
-  }
-  if (tipoExame === "dengue" && !amostraSangue) {
-    Alert.alert("Erro", "Informe a amostra de sangue para dengue.");
-    return console.log("Falhou");
-  }
-  if (tipoExame === "abo" && (!amostraDna || !tipoSanguineo)) {
-    Alert.alert("Erro", "Preencha amostra de DNA e tipo sanguíneo para ABO.");
-    return console.log("Falhou");
-  }
-  if (tipoExame === "covid" && (!tipoTeste || !statusAmostra || !resultado)) {
-    Alert.alert("Erro", "Preencha tipo de teste, status da amostra e resultado para Covid.");
-    return console.log("Falhou");
-  }
-  return true;
-};
+    if (!selectedPacienteId) { Alert.alert("Erro", "Selecione um paciente."); return false; }
+    if (!selectedAgendamentoId) { Alert.alert("Erro", "Selecione um agendamento."); return false; }
+    if (!tipoExame) { Alert.alert("Erro", "Selecione o tipo de exame."); return false; }
+    if (!nome) { Alert.alert("Erro", "Informe o nome do exame."); return false; }
 
+    if (tipoExame === "dengue" && !amostraSangue) {
+      Alert.alert("Erro", "Informe a amostra de sangue para dengue.");
+      return false;
+    }
+    if (tipoExame === "abo" && (!amostraDna || !tipoSanguineo)) {
+      Alert.alert("Erro", "Preencha amostra de DNA e tipo sanguíneo para ABO.");
+      return false;
+    }
+    if (tipoExame === "covid" && (!tipoTeste || !statusAmostra || !resultado)) {
+      Alert.alert("Erro", "Preencha tipo de teste, status da amostra e resultado para Covid.");
+      return false;
+    }
+    return true;
+  };
 
   const handleSave = async () => {
-  console.log("handleSave iniciado");
-  if (!validarCampos()) {
-    console.log("Validação falhou");
-    return;
-  }
-  setLoading(true);
-  try {
-    console.log("Enviando dados para backend", { selectedPacienteId, selectedAgendamentoId, tipoExame, nome });
-    const token = await AsyncStorage.getItem("authToken");
-    let endpoint = "";
-    let payload = {
-      agendamento_id: selectedAgendamentoId,
-      paciente_id: selectedPacienteId,
-      nome,
-    };
-    switch (tipoExame) {
-      case "dengue":
-        endpoint = "/exames/dengue";
-        payload.amostra_sangue = amostraSangue;
-        payload.data_inicio_sintomas = dataInicioSintomas || null;
-        break;
-      case "abo":
-        endpoint = "/exames/abo";
-        payload.amostra_dna = amostraDna;
-        payload.tipo_sanguineo = tipoSanguineo;
-        payload.observacoes = obsAbo || null;
-        break;
-      case "covid":
-        endpoint = "/exames/covid";
-        payload.tipo_teste = tipoTeste;
-        payload.status_amostra = statusAmostra;
-        payload.resultado = resultado;
-        payload.data_inicio_sintomas = dataInicioSintomasCovid || null;
-        payload.sintomas = sintomas || null;
-        payload.nivel_anticorpos = nivelAnticorpos || null;
-        payload.observacoes = obsCovid || null;
-        break;
-      default:
-        throw new Error("Tipo de exame inválido");
-    }
-    console.log("Payload montado:", payload);
-    await api.post(endpoint, payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    console.log("Requisição concluída com sucesso");
-    Alert.alert("Sucesso", "Exame cadastrado com sucesso!");
-    navigation.goBack();
-  } catch (error) {
-    console.error("Erro ao cadastrar exame:", error.response || error);
-    Alert.alert("Erro", "Falha ao cadastrar exame. Tente novamente.");
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!validarCampos()) return;
 
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      let endpoint = "";
+      let payload = {
+        agendamento_id: selectedAgendamentoId,
+        paciente_id: selectedPacienteId,
+        nome,
+      };
+
+      switch (tipoExame) {
+        case "dengue":
+          endpoint = "/exames/dengue";
+          payload.amostra_sangue = amostraSangue;
+          // Converte data
+          payload.data_inicio_sintomas = converterDataParaBanco(dataInicioSintomas) || null;
+          break;
+        case "abo":
+          endpoint = "/exames/abo";
+          payload.amostra_dna = amostraDna;
+          payload.tipo_sanguineo = tipoSanguineo;
+          payload.observacoes = obsAbo || null;
+          break;
+        case "covid":
+          endpoint = "/exames/covid";
+          payload.tipo_teste = tipoTeste;
+          payload.status_amostra = statusAmostra;
+          payload.resultado = resultado;
+          // Converte data
+          payload.data_inicio_sintomas = converterDataParaBanco(dataInicioSintomasCovid) || null;
+          payload.sintomas = sintomas || null;
+          payload.nivel_anticorpos = nivelAnticorpos || null;
+          payload.observacoes = obsCovid || null;
+          break;
+        default:
+          throw new Error("Tipo de exame inválido");
+      }
+
+      await api.post(endpoint, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      Alert.alert("Sucesso", "Exame cadastrado com sucesso!");
+      navigation.goBack();
+    } catch (error) {
+      console.error("Erro ao cadastrar exame:", error.response || error);
+      Alert.alert("Erro", "Falha ao cadastrar exame. Verifique as datas.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loadingDados) {
     return (
       <SafeAreaView style={Estilo.container}>
-        <Text>Carregando...</Text>
+        <Text style={{ textAlign: 'center', marginTop: 20 }}>Carregando...</Text>
       </SafeAreaView>
     );
   }
@@ -231,7 +231,6 @@ export default function CadastroExameDinamico({ navigation }) {
       </View>
 
       <ScrollView style={Estilo.content} keyboardShouldPersistTaps="handled">
-        {/* Seletor colapsável paciente */}
         <TouchableOpacity
           style={Estilo.collapsibleHeader}
           onPress={() => setPacienteDropdownOpen(!pacienteDropdownOpen)}
@@ -268,12 +267,7 @@ export default function CadastroExameDinamico({ navigation }) {
                       setPacienteDropdownOpen(false);
                     }}
                   >
-                    <Text
-                      style={[
-                        Estilo.dropdownText,
-                        selectedPacienteId === p.id && Estilo.dropdownTextSelected,
-                      ]}
-                    >
+                    <Text style={[Estilo.dropdownText, selectedPacienteId === p.id && Estilo.dropdownTextSelected]}>
                       {p.nome}
                     </Text>
                   </TouchableOpacity>
@@ -297,13 +291,8 @@ export default function CadastroExameDinamico({ navigation }) {
                 ]}
                 onPress={() => setSelectedAgendamentoId(a.id)}
               >
-                <Text
-                  style={[
-                    Estilo.dropdownText,
-                    selectedAgendamentoId === a.id && Estilo.dropdownTextSelected,
-                  ]}
-                >
-                  {a.tipo_exame} - {a.data_consulta}
+                <Text style={[Estilo.dropdownText, selectedAgendamentoId === a.id && Estilo.dropdownTextSelected]}>
+                  {a.tipo_exame} - {a.data_consulta ? new Date(a.data_consulta).toLocaleDateString('pt-BR') : ''}
                 </Text>
               </TouchableOpacity>
             ))
@@ -319,140 +308,140 @@ export default function CadastroExameDinamico({ navigation }) {
         />
 
         {tipoExame === "dengue" && (
-  <>
-    <Text style={Estilo.label}>Nome do Exame *</Text>
-    <TextInput
-      style={Estilo.input}
-      placeholder="Nome do exame"
-      value={nome}
-      onChangeText={setNome}
-      autoCapitalize="words"
-      multiline={false}
-    />
-    <Text style={Estilo.label}>Amostra de Sangue *</Text>
-    <TextInput
-      style={Estilo.input}
-      placeholder="Detalhes da amostra"
-      value={amostraSangue}
-      onChangeText={setAmostraSangue}
-      multiline
-    />
-    <Text style={Estilo.label}>Data Início dos Sintomas</Text>
-    <TextInput
-      style={Estilo.input}
-      placeholder="AAAA-MM-DD"
-      value={dataInicioSintomas}
-      onChangeText={setDataInicioSintomas}
-    />
-  </>
-)}
+          <>
+            <Text style={Estilo.label}>Nome do Exame *</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="Nome do exame"
+              value={nome}
+              onChangeText={setNome}
+              autoCapitalize="words"
+            />
+            <Text style={Estilo.label}>Amostra de Sangue *</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="Detalhes da amostra"
+              value={amostraSangue}
+              onChangeText={setAmostraSangue}
+              multiline
+            />
+            <Text style={Estilo.label}>Data Início dos Sintomas</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="DD/MM/AAAA"
+              value={dataInicioSintomas}
+              onChangeText={(t) => formatDataVisual(t, setDataInicioSintomas)}
+              keyboardType="numeric"
+              maxLength={10}
+            />
+          </>
+        )}
 
-{tipoExame === "abo" && (
-  <>
-    <Text style={Estilo.label}>Nome do Exame *</Text>
-    <TextInput
-      style={Estilo.input}
-      placeholder="Nome do exame"
-      value={nome}
-      onChangeText={setNome}
-      autoCapitalize="words"
-      multiline={false}
-    />
-    <Text style={Estilo.label}>Amostra DNA *</Text>
-    <TextInput
-      style={Estilo.input}
-      placeholder="Detalhes da amostra de DNA"
-      value={amostraDna}
-      onChangeText={setAmostraDna}
-      multiline
-    />
-    <Text style={Estilo.label}>Tipo Sanguíneo *</Text>
-    <TextInput
-      style={Estilo.input}
-      placeholder="Ex: A+, O-, etc."
-      value={tipoSanguineo}
-      onChangeText={setTipoSanguineo}
-    />
-    <Text style={Estilo.label}>Observações</Text>
-    <TextInput
-      style={[Estilo.input, Estilo.textArea]}
-      placeholder="Observações adicionais"
-      value={obsAbo}
-      onChangeText={setObsAbo}
-      multiline
-      numberOfLines={4}
-    />
-  </>
-)}
+        {tipoExame === "abo" && (
+          <>
+            <Text style={Estilo.label}>Nome do Exame *</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="Nome do exame"
+              value={nome}
+              onChangeText={setNome}
+              autoCapitalize="words"
+            />
+            <Text style={Estilo.label}>Amostra DNA *</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="Detalhes da amostra de DNA"
+              value={amostraDna}
+              onChangeText={setAmostraDna}
+              multiline
+            />
+            <Text style={Estilo.label}>Tipo Sanguíneo *</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="Ex: A+, O-, etc."
+              value={tipoSanguineo}
+              onChangeText={setTipoSanguineo}
+            />
+            <Text style={Estilo.label}>Observações</Text>
+            <TextInput
+              style={[Estilo.input, Estilo.textArea]}
+              placeholder="Observações adicionais"
+              value={obsAbo}
+              onChangeText={setObsAbo}
+              multiline
+              numberOfLines={4}
+            />
+          </>
+        )}
 
-{tipoExame === "covid" && (
-  <>
-    <Text style={Estilo.label}>Nome do Exame *</Text>
-    <TextInput
-      style={Estilo.input}
-      placeholder="Nome do exame"
-      value={nome}
-      onChangeText={setNome}
-      autoCapitalize="words"
-      multiline={false}
-    />
-    <Text style={Estilo.label}>Tipo de Teste *</Text>
-    <TextInput
-      style={Estilo.input}
-      placeholder="Ex: PCR, Antígeno"
-      value={tipoTeste}
-      onChangeText={setTipoTeste}
-    />
-    <Text style={Estilo.label}>Status da Amostra *</Text>
-    <TextInput
-      style={Estilo.input}
-      placeholder="Ex: Coletada, Enviada, etc."
-      value={statusAmostra}
-      onChangeText={setStatusAmostra}
-    />
-    <Text style={Estilo.label}>Resultado *</Text>
-    <TextInput
-      style={Estilo.input}
-      placeholder="Positivo, Negativo, etc."
-      value={resultado}
-      onChangeText={setResultado}
-    />
-    <Text style={Estilo.label}>Data Início dos Sintomas</Text>
-    <TextInput
-      style={Estilo.input}
-      placeholder="AAAA-MM-DD"
-      value={dataInicioSintomasCovid}
-      onChangeText={setDataInicioSintomasCovid}
-    />
-    <Text style={Estilo.label}>Sintomas</Text>
-    <TextInput
-      style={[Estilo.input, Estilo.textArea]}
-      placeholder="Liste os sintomas"
-      value={sintomas}
-      onChangeText={setSintomas}
-      multiline
-      numberOfLines={4}
-    />
-    <Text style={Estilo.label}>Nível Anticorpos (BAU/mL)</Text>
-    <TextInput
-        style={Estilo.input} 
-        placeholder="Ex: 1500.5" 
-        value={nivelAnticorpos}
-        onChangeText={setNivelAnticorpos}
-        keyboardType="numeric"
-    />
-    <Text style={Estilo.label}>Observações</Text>
-    <TextInput
-      style={[Estilo.input, Estilo.textArea]}
-      placeholder="Observações adicionais"
-      value={obsCovid}
-      onChangeText={setObsCovid}
-      multiline
-      numberOfLines={4}
-    />
-  </>
-)}
-
+        {tipoExame === "covid" && (
+          <>
+            <Text style={Estilo.label}>Nome do Exame *</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="Nome do exame"
+              value={nome}
+              onChangeText={setNome}
+              autoCapitalize="words"
+            />
+            <Text style={Estilo.label}>Tipo de Teste *</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="Ex: PCR, Antígeno"
+              value={tipoTeste}
+              onChangeText={setTipoTeste}
+            />
+            <Text style={Estilo.label}>Status da Amostra *</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="Ex: Coletada, Enviada, etc."
+              value={statusAmostra}
+              onChangeText={setStatusAmostra}
+            />
+            <Text style={Estilo.label}>Resultado *</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="Positivo, Negativo, etc."
+              value={resultado}
+              onChangeText={setResultado}
+            />
+            <Text style={Estilo.label}>Data Início dos Sintomas</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="DD/MM/AAAA"
+              value={dataInicioSintomasCovid}
+              onChangeText={(t) => formatDataVisual(t, setDataInicioSintomasCovid)}
+              keyboardType="numeric"
+              maxLength={10}
+            />
+            <Text style={Estilo.label}>Sintomas</Text>
+            <TextInput
+              style={[Estilo.input, Estilo.textArea]}
+              placeholder="Liste os sintomas"
+              value={sintomas}
+              onChangeText={setSintomas}
+              multiline
+              numberOfLines={4}
+            />
+            <Text style={Estilo.label}>Nível Anticorpos (BAU/mL)</Text>
+            <TextInput
+              style={Estilo.input}
+              placeholder="Ex: 1500.5"
+              value={nivelAnticorpos}
+              onChangeText={setNivelAnticorpos}
+              keyboardType="numeric"
+            />
+            <Text style={Estilo.label}>Observações</Text>
+            <TextInput
+              style={[Estilo.input, Estilo.textArea]}
+              placeholder="Observações adicionais"
+              value={obsCovid}
+              onChangeText={setObsCovid}
+              multiline
+              numberOfLines={4}
+            />
+          </>
+        )}
 
         <TouchableOpacity
           style={[Estilo.saveButton, loading && { opacity: 0.6 }]}
@@ -469,7 +458,7 @@ export default function CadastroExameDinamico({ navigation }) {
 const Estilo = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#f8f9fa"
   },
   header: {
     flexDirection: "row",
@@ -478,91 +467,91 @@ const Estilo = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
+    borderBottomColor: "#e9ecef"
   },
-  backButton: {
-    marginRight: 15,
+  backButton: { 
+    marginRight: 15 
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#212529",
+  headerTitle: { 
+    fontSize: 20, 
+    fontWeight: "bold", 
+    color: "#212529" 
   },
-  content: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+  content: { 
+    paddingHorizontal: 20, 
+    paddingVertical: 20 
   },
-  label: {
-    fontSize: 16,
-    color: "#212529",
-    marginBottom: 8,
+  label: { 
+    fontSize: 16, 
+    color: "#212529", 
+    marginBottom: 8 
   },
-  input: {
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#ced4da",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 16,
-    fontSize: 16,
-    color: "#495057",
+  input: { 
+    backgroundColor: "#ffffff", 
+    borderWidth: 1, 
+    borderColor: "#ced4da", 
+    borderRadius: 8, 
+    paddingHorizontal: 12, 
+    paddingVertical: 10, 
+    marginBottom: 16, 
+    fontSize: 16, 
+    color: "#495057" 
   },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
+  textArea: { 
+    height: 100, 
+    textAlignVertical: "top" 
   },
-  dropdownContainer: {
-    marginBottom: 16,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#ced4da",
+  dropdownContainer: { 
+    marginBottom: 16, 
+    backgroundColor: "#fff", 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: "#ced4da" 
   },
-  dropdownItem: {
-    padding: 10,
+  dropdownItem: { 
+    padding: 10 
   },
-  dropdownItemSelected: {
-    backgroundColor: "#2480f9",
+  dropdownItemSelected: { 
+    backgroundColor: "#2480f9" 
   },
-  dropdownText: {
-    fontSize: 16,
+  dropdownText: { 
+    fontSize: 16 
   },
-  dropdownTextSelected: {
-    color: "#ffffff",
-    fontWeight: "bold",
+  dropdownTextSelected: { 
+    color: "#ffffff", 
+    fontWeight: "bold" 
   },
-  noItemsText: {
-    padding: 10,
-    color: "#868e96",
-    fontStyle: "italic",
+  noItemsText: { 
+    padding: 10, 
+    color: "#868e96", 
+    fontStyle: "italic" 
   },
-  collapsibleHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ced4da",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 8,
-    backgroundColor: "#ffffff",
+  collapsibleHeader: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center", 
+    borderWidth: 1, 
+    borderColor: "#ced4da", 
+    borderRadius: 8, 
+    paddingHorizontal: 12, 
+    paddingVertical: 10, 
+    marginBottom: 8, 
+    backgroundColor: "#ffffff" 
   },
-  collapsibleHeaderText: {
-    fontSize: 16,
-    color: "#212529",
+  collapsibleHeaderText: { 
+    fontSize: 16, 
+    color: "#212529" 
   },
-  saveButton: {
-    backgroundColor: "#2480f9",
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: "center",
-    marginTop: 10,
+  saveButton: { 
+    backgroundColor: "#2480f9", 
+    borderRadius: 12, 
+    paddingVertical: 15, 
+    alignItems: "center", 
+    marginTop: 10 
   },
-  saveButtonText: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "600",
+  saveButtonText: { 
+    color: "#ffffff", 
+    fontSize: 18, 
+    fontWeight: "600" 
   },
 });

@@ -85,7 +85,7 @@ export default function Funcionalidades() {
                             <Text style={Estilo.subtitle}>Cadastro de novos usuários no sistema</Text>
                         </TouchableOpacity>
 
-                        {/* Botão Exames (Só ADM) - MOVIDO PRA CÁ */}
+                        {/* Botão Exames (Só ADM) */}
                         <TouchableOpacity style={Estilo.button} onPress={() => navigation.navigate("Exames")}>
                             <View style={Estilo.icon}>
                                 <Feather name="activity" size={25} color="rgba(36, 128, 249, 0.8)" />

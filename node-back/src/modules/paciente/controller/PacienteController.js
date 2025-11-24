@@ -1,4 +1,4 @@
-const pool = require('../../../db/mysqlConnect'); // importar pool de conexão
+const pool = require('../../../db/mysqlConnect'); 
 
 // Listar todos os pacientes
 async function listarPacientes(req, res) {
