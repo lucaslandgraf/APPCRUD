@@ -67,7 +67,7 @@ async function recuperarSenhaService(email) {
       throw new Error('Usuário não encontrado');
     }
 
-    // 2. Gera uma nova senha aleatória (ex: 'gJ8K_tLq')
+    // 2. Gera uma nova senha aleatória 
     const novaSenha = nanoid(8); 
 
     // 3. Cria o hash da nova senha

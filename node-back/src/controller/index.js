@@ -23,19 +23,7 @@ app.get("/", async (req, res) => {
     res.json({status: "Ok"});
 });
 
-// ROTA /getpaciente
-app.get("/getpaciente", checkAuth, checkRole(['DEFAULT', 'ADM']), async (req, res) => {
-    try{
-        const [rows] = await pool.execute('SELECT * FROM paciente;');
-        res.status(200).json(rows);
-
-    } catch (error){
-        console.error("Erro ao realizar a consulta", error);
-        res.status(500).json({ error: "Erro interno ao buscar pacientes." });
-    }    
-})
-
-app.get('/dashboard-stats', checkAuth, checkRole(['DEFAULT', 'ADM']), getDashboardStats); // <<< NOVA LINHA
+app.get('/dashboard-stats', checkAuth, checkRole(['DEFAULT', 'ADM']), getDashboardStats); 
 
 // --- ROTAS DE ACESSO ---
 
@@ -49,18 +37,23 @@ app.post('/alunos', checkAuth, checkRole(['ADM']), cadastrarAluno);
 app.delete('/alunos/:id', checkAuth, checkRole(['ADM']), excluirAluno);
 app.put('/alunos/:id', checkAuth, checkRole(['ADM']), atualizarAluno);
 
+// ROTAS DOS PACIENTES
+
 app.get('/pacientes', checkAuth, checkRole(['DEFAULT', 'ADM']), listarPacientes);
 app.get('/pacientes/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), obterPaciente);
 app.post('/pacientes', checkAuth, checkRole(['DEFAULT', 'ADM']), criarPaciente);
 app.delete('/pacientes/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), deletarPaciente);
-app.put('/pacientes/:id', checkAuth, checkRole(['ADM']), atualizarPaciente)
+app.put('/pacientes/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), atualizarPaciente)
 
-// Agendamentos
-app.post('/agendamentos', checkAuth, checkRole(['ADM']), criarAgendamento);
+// ROTAS DOS AGENDAMENTOS
+
+app.post('/agendamentos', checkAuth, checkRole(['DEFAULT', 'ADM']), criarAgendamento);
 app.get('/agendamentos', checkAuth, checkRole(['DEFAULT', 'ADM']), listarAgendamentos);
 app.delete('/agendamentos/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), deletarAgendamento);
 app.get('/agendamentos/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), obterAgendamento);
 app.put('/agendamentos/:id', checkAuth, checkRole(['DEFAULT', 'ADM']), atualizarAgendamento);
+
+// ROTAS DOS EXAMES
 
 app.get('/exames', checkAuth, checkRole(['DEFAULT', 'ADM']), listarTodosExames);
 app.post('/exames/covid', criarExameCovid19);

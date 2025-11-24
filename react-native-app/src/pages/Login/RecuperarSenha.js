@@ -7,7 +7,7 @@ export default function RecuperarSenha({ navigation }) {
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // FUNÇÃO ATUALIZADA PARA USAR AXIOS 
+    // FUNÇÃO AXIOS 
     const handleRecuperar = async () => {
         if (!email) {
             Alert.alert('Atenção', 'Por favor, digite seu e-mail.');

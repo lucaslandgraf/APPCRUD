@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Alert
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker'; // Importa o Picker
+import { Picker } from '@react-native-picker/picker'; 
 
 import api from '../../../services/api'; 
 

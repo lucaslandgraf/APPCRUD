@@ -8,6 +8,7 @@ import {
   StyleSheet,
   StatusBar,
   Alert,
+  TextInput,
   Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,6 +18,16 @@ import { Octicons } from '@expo/vector-icons';
 export default function ListaPacientes({ navigation }) {
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [busca, setBusca] = useState('');
+
+  const formatCpfVisual = (cpf) => {
+    if (!cpf) return 'Não informado';
+    const cpfString = String(cpf);
+    if (cpfString.length === 11) {
+      return cpfString.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+    return cpfString;
+  };
 
   const carregarPacientes = async () => {
     setLoading(true);
@@ -35,49 +46,91 @@ export default function ListaPacientes({ navigation }) {
   };
 
   useEffect(() => {
-    carregarPacientes();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      carregarPacientes();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const handleAddPatient = () => {
     navigation.navigate('CadastroPacientes');
   };
 
   const handleEditPatient = (paciente) => {
-    navigation.navigate('EditarPaciente', { pacienteId: paciente.id }); // Passa paciente para edição
+    navigation.navigate('EditarPaciente', { pacienteId: paciente.id });
   };
 
   const handleDeletePatient = (paciente) => {
-    const confirmacao = window.confirm(
-      `Deseja realmente excluir o paciente ${paciente.nome} (ID: ${paciente.id})?`
-    );
 
-    if (confirmacao) {
-      const performDelete = async () => {
-        try {
-          const token = await AsyncStorage.getItem('authToken');
-          await api.delete(`/pacientes/${paciente.id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          window.alert(`Sucesso! Paciente ${paciente.nome} excluído.`);
-          carregarPacientes();
-        } catch (error) {
-          console.error('Erro ao excluir paciente:', error);
-          window.alert('Erro', 'Não foi possível excluir o paciente. Verifique se a rota DELETE /pacientes/:id está configurada corretamente no back-end.');
+    const performDelete = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        await api.delete(`/pacientes/${paciente.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (Platform.OS === 'web') {
+            window.alert(`Sucesso: Paciente ${paciente.nome} excluído.`);
+        } else {
+            Alert.alert('Sucesso', `Paciente ${paciente.nome} excluído.`);
         }
-      };
-      performDelete();
+        carregarPacientes();
+      } catch (error) {
+        console.error('Erro ao excluir paciente:', error);
+        Alert.alert('Erro', 'Não foi possível excluir o paciente.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+        const confirmacao = window.confirm(`Deseja realmente excluir o paciente ${paciente.nome}?`);
+        if (confirmacao) {
+            performDelete();
+        }
+    } else {
+        Alert.alert(
+            'Confirmar Exclusão',
+            `Deseja realmente excluir o paciente ${paciente.nome}?`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Excluir',
+                    style: 'destructive',
+                    onPress: performDelete,
+                },
+            ]
+        );
     }
   };
+
+  const pacientesFiltrados = pacientes.filter((p) =>
+    p.nome.toLowerCase().includes(busca.toLowerCase())
+  );
 
   return (
     <SafeAreaView style={Estilo.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      
+
       <View style={Estilo.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={Estilo.backButton}>
           <Text style={Estilo.backButtonText}>{'<-'} Voltar</Text>
         </TouchableOpacity>
         <Text style={Estilo.headerTitle}>Visualizar Pacientes</Text>
+      </View>
+
+      <View style={Estilo.searchContainer}>
+        <Octicons name="search" size={20} color="#6c757d" style={Estilo.searchIcon} />
+        <TextInput
+          style={Estilo.searchInput}
+          placeholder="Buscar paciente pelo nome..."
+          value={busca}
+          onChangeText={setBusca}
+          placeholderTextColor="#999"
+        />
+        {busca.length > 0 && (
+          <TouchableOpacity onPress={() => setBusca('')}>
+            <Octicons name="x-circle" size={20} color="#6c757d" />
+          </TouchableOpacity>
+        )}
       </View>
 
       <TouchableOpacity style={Estilo.addCard} onPress={handleAddPatient} disabled={loading}>
@@ -91,18 +144,24 @@ export default function ListaPacientes({ navigation }) {
       </TouchableOpacity>
 
       <ScrollView style={Estilo.content}>
-        {loading && <Text style={{textAlign: 'center'}}>Carregando...</Text>}
-        {!loading && pacientes.length === 0 && (
-          <Text style={{textAlign: 'center', marginTop: 20}}>Nenhum paciente cadastrado.</Text>
+        {loading && <Text style={{ textAlign: 'center' }}>Carregando...</Text>}
+
+        {!loading && pacientesFiltrados.length === 0 && (
+          <Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>
+            {pacientes.length === 0 ? "Nenhum paciente cadastrado." : "Nenhum paciente encontrado com esse nome."}
+          </Text>
         )}
-        {pacientes.map((paciente) => (
+
+        {pacientesFiltrados.map((paciente) => (
           <View key={paciente.id} style={Estilo.patientCard}>
             <View style={Estilo.patientInfo}>
               <Text style={Estilo.patientName}>{paciente.nome}</Text>
               <Text style={Estilo.patientDetails}>
-                Idade: {new Date().getFullYear() - new Date(paciente.data_nascimento).getFullYear()} anos
+                Idade: {paciente.data_nascimento ? new Date().getFullYear() - new Date(paciente.data_nascimento).getFullYear() : 'N/A'} anos
               </Text>
-              <Text style={Estilo.patientDetails}>CPF: {paciente.cpf}</Text>
+              <Text style={Estilo.patientDetails}>
+                CPF: {formatCpfVisual(paciente.CPF || paciente.cpf)}
+              </Text>
             </View>
             <View style={Estilo.actionsContainer}>
               <TouchableOpacity
@@ -120,6 +179,7 @@ export default function ListaPacientes({ navigation }) {
             </View>
           </View>
         ))}
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -151,12 +211,34 @@ const Estilo = StyleSheet.create({
     fontWeight: '600',
     color: '#212529',
   },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    paddingHorizontal: 15,
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    height: '100%',
+  },
   addCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 20,
     marginHorizontal: 20,
-    marginBottom: 16,
+    marginVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
     borderLeftWidth: 4,
@@ -198,7 +280,6 @@ const Estilo = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    marginTop: 10,
   },
   patientCard: {
     backgroundColor: '#ffffff',

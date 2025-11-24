@@ -2,7 +2,7 @@ const { listarAlunosService, cadastrarAlunoService, excluirAlunoService, atualiz
 
 async function listarAlunos(req, res) {
   try {
-    const alunos = await listarAlunosService(); // Chama o service
+    const alunos = await listarAlunosService(); 
     res.status(200).json(alunos);
   } catch (error) {
     res.status(500).json({ error: error.message });

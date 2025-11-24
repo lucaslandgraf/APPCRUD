@@ -1,9 +1,8 @@
-const pool = require('../../../db/mysqlConnect'); // importar pool de conexão
+const pool = require('../../../db/mysqlConnect');
 
 // Função auxiliar para buscar paciente por CPF
 async function buscarPacientePorCpf(cpf) {
   try {
-    // Assumindo que existe uma tabela 'paciente' com uma coluna 'cpf'
     const [rows] = await pool.execute('SELECT id FROM paciente WHERE cpf = ?', [cpf]);
     return rows.length > 0 ? rows[0] : null;
   } catch (error) {
@@ -15,7 +14,13 @@ async function buscarPacientePorCpf(cpf) {
 // Listar todos agendamentos
 async function listarAgendamentos(req, res) {
   try {
-    const [rows] = await pool.execute('SELECT * FROM agendamento');
+    const sql = `
+      SELECT a.*, p.nome AS nome_paciente, p.cpf AS cpf_paciente
+      FROM agendamento a
+      LEFT JOIN paciente p ON a.paciente_id = p.id
+      ORDER BY a.data_consulta DESC
+    `;
+    const [rows] = await pool.execute(sql);
     res.status(200).json(rows);
   } catch (error) {
     console.error('Erro ao listar agendamentos:', error);
@@ -27,7 +32,13 @@ async function listarAgendamentos(req, res) {
 async function obterAgendamento(req, res) {
   const { id } = req.params;
   try {
-    const [rows] = await pool.execute('SELECT * FROM agendamento WHERE id = ?', [id]);
+    const sql = `
+      SELECT a.*, p.nome AS nome_paciente 
+      FROM agendamento a
+      LEFT JOIN paciente p ON a.paciente_id = p.id
+      WHERE a.id = ?
+    `;
+    const [rows] = await pool.execute(sql, [id]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Agendamento não encontrado' });
     }
@@ -40,28 +51,25 @@ async function obterAgendamento(req, res) {
 
 // Criar novo agendamento
 async function criarAgendamento(req, res) {
-  const { paciente_cpf, data_consulta, tipo_exame } = req.body;
+  const { paciente_cpf, data_consulta, tipo_exame, observacoes } = req.body; 
+  
   if (!paciente_cpf || !data_consulta || !tipo_exame) {
     return res.status(400).json({ error: 'Dados incompletos para criar agendamento' });
   }
-  try {
-    // 1. Buscar o paciente pelo CPF
-    const paciente = await buscarPacientePorCpf(paciente_cpf);
 
+  try {
+    const paciente = await buscarPacientePorCpf(paciente_cpf);
     if (!paciente) {
-      console.error("Paciente não encontrado");
       return res.status(404).json({ error: 'Paciente não encontrado para o CPF informado' });
     }
 
-    // 2. Usar o ID do paciente para criar o agendamento
     const [result] = await pool.execute(
-      'INSERT INTO agendamento (paciente_id, data_consulta, tipo_exame) VALUES (?, ?, ?)',
-      [paciente.id, data_consulta, tipo_exame]
+      'INSERT INTO agendamento (paciente_id, data_consulta, tipo_exame, observacoes) VALUES (?, ?, ?, ?)', 
+      [paciente.id, data_consulta, tipo_exame, observacoes || null]
     );
     res.status(201).json({ message: 'Agendamento criado', id: result.insertId });
   } catch (error) {
     console.error('Erro ao criar agendamento:', error);
-    // Verifica se o erro veio da função auxiliar
     if (error.message.includes('buscar paciente')) {
         return res.status(500).json({ error: 'Erro interno ao buscar paciente' });
     }
@@ -69,22 +77,18 @@ async function criarAgendamento(req, res) {
   }
 }
 
-
-// Atualizar agendamento pelo ID
+// Atualizar agendamento
 async function atualizarAgendamento(req, res) {
   const { id } = req.params;
-  // O front-end original enviava paciente_id, mas o novo front-end enviará paciente_cpf.
-  // Para manter a compatibilidade com a função de atualização, vou manter a lógica de usar paciente_id
-  // mas é importante notar que o front-end de *criação* mudou para usar CPF.
-  const { paciente_id, data_consulta, tipo_exame } = req.body; 
+  const { paciente_id, data_consulta, tipo_exame, observacoes } = req.body; 
   
   if (!paciente_id || !data_consulta || !tipo_exame) {
     return res.status(400).json({ error: 'Dados incompletos para atualizar agendamento' });
   }
   try {
     const [result] = await pool.execute(
-      'UPDATE agendamento SET paciente_id = ?, data_consulta = ?, tipo_exame = ? WHERE id = ?',
-      [paciente_id, data_consulta, tipo_exame, id]
+      'UPDATE agendamento SET paciente_id = ?, data_consulta = ?, tipo_exame = ?, observacoes = ? WHERE id = ?', 
+      [paciente_id, data_consulta, tipo_exame, observacoes || null, id]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Agendamento não encontrado' });
@@ -96,7 +100,7 @@ async function atualizarAgendamento(req, res) {
   }
 }
 
-// Deletar agendamento pelo ID
+// Deletar agendamento
 async function deletarAgendamento(req, res) {
   const { id } = req.params;
   try {

@@ -1,6 +1,6 @@
 const pool = require('../../../db/mysqlConnect');
 const bcrypt = require('bcryptjs');
-const { enviarEmail } = require('../../acesso/service/usuarioService'); // Importa do service de acesso
+const { enviarEmail } = require('../../acesso/service/usuarioService'); 
 
 // Função que BUSCA os alunos no banco
 async function listarAlunosService() {

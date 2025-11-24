@@ -10,7 +10,7 @@ import api from '../../../services/api';
 
 export default function ListagemAlunos({ navigation }) {
     
-    const [alunos, setAlunos] = useState([]); // Lista mestra
+    const [alunos, setAlunos] = useState([]); 
     const [listaFiltrada, setListaFiltrada] = useState([]); // Lista mostrada na tela
     const [termoBusca, setTermoBusca] = useState(''); // Texto da busca
 
@@ -20,7 +20,6 @@ export default function ListagemAlunos({ navigation }) {
 
     const fetchAlunos = async () => {
         setError(null);
-        // Só mostra o loading grande na primeira carga
         if (alunos.length === 0) setIsLoading(true); 
         
         try {
@@ -29,8 +28,6 @@ export default function ListagemAlunos({ navigation }) {
             data.sort((a, b) => a.nome.localeCompare(b.nome));
             
             setAlunos(data); 
-            
-            // Se não houver busca, atualiza a lista filtrada
             if (termoBusca === '') {
                 setListaFiltrada(data);
             }
@@ -185,10 +182,9 @@ export default function ListagemAlunos({ navigation }) {
                 <Text style={Estilo.emptyText}>Erro ao carregar: {error}</Text>
             ) : (
                 <FlatList
-                    data={listaFiltrada} // Usa a lista filtrada
+                    data={listaFiltrada} 
                     keyExtractor={item => item.id.toString()}
                     renderItem={renderItem}
-                    // ListHeaderComponent removido
                     contentContainerStyle={Estilo.content}
                     ListEmptyComponent={
                         <Text style={Estilo.emptyText}>

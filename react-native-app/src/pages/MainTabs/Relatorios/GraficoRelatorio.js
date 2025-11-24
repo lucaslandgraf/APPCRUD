@@ -63,7 +63,7 @@ export default function GraficoRelatorio({ navigation }) {
                     });
                     
                     setChartData({
-                        labels: scatterLabels, // Estes são os labels do Eixo X
+                        labels: scatterLabels,
                         datasets: [
                             { 
                                 data: scatterData,
@@ -125,8 +125,12 @@ export default function GraficoRelatorio({ navigation }) {
             return (
                 <View style={Estilo.content}>
                     
-                    <Text style={Estilo.chartTitle}>Regressão: Idade vs. Nível de Anticorpos</Text>
-                    
+                    <Text style={Estilo.chartTitle}>
+                        Regressão: Idade vs. Anticorpos
+                    </Text>
+                    <Text style={Estilo.chartFilterLabel}>
+                        (Apenas Pacientes Positivados - A Covid-19)
+                    </Text>
 
                     <View style={Estilo.chartContainer}>
                         <Text style={Estilo.chartSubtitle}>Eixo Y: Nível Anticorpos (BAU/mL)</Text>
@@ -137,9 +141,8 @@ export default function GraficoRelatorio({ navigation }) {
                             withShadow={false}
                             yAxisLabel=" " 
                             xAxisLabel=" "
-                            withHorizontalLabels={true} // Garante que os labels X sejam mostrados
-                            withVerticalLabels={true}   // Garante que os labels Y sejam mostrados
-                        
+                            withHorizontalLabels={true} 
+                            withVerticalLabels={true} 
                             chartConfig={{
                                 backgroundColor: "#FFF",
                                 backgroundGradientFrom: "#FFF",
@@ -158,7 +161,14 @@ export default function GraficoRelatorio({ navigation }) {
                     </View>
                     
                     <Text style={Estilo.xAxisLabelStyle}>Eixo X: Idade (Anos)</Text>
-
+                    <View style={Estilo.disclaimerBox}>
+                        <Feather name="info" size={18} color="#6c757d" style={{marginBottom: 5}}/>
+                        <Text style={Estilo.disclaimerText}>
+                            <Text style={{fontWeight: 'bold'}}>Nota Técnica:</Text> Este gráfico exibe a magnitude da resposta imune apenas em pacientes que desenvolveram anticorpos (Positivos). 
+                            {"\n\n"}
+                            Pacientes <Text style={{fontWeight: 'bold'}}>Negativados</Text> não são exibidos pois não possuem anticorpos específicos contra a Covid-19 (nível zero ou residual), o que distorceria a análise da tendência por idade.
+                        </Text>
+                    </View>
                     <View style={Estilo.statsBox}>
                         <Text style={Estilo.statsTitle}>Resultados do Modelo (Regressão)</Text>
                         <Text style={Estilo.statsText}>
@@ -167,9 +177,15 @@ export default function GraficoRelatorio({ navigation }) {
                         <Text style={Estilo.statsText}>
                             <Text style={Estilo.statsLabel}>R² (Determinação):</Text> {model.R2.toFixed(4)}
                         </Text>
+                        
                         <Text style={Estilo.statsText}>
-                            <Text style={Estilo.statsLabel}>P-value (Idade):</Text> {model.p_value.toFixed(6)}
+                            <Text style={Estilo.statsLabel}>P-value (Idade):</Text> {
+                                model.p_value < 0.0001 
+                                ? "< 0.0001" 
+                                : model.p_value.toFixed(6)
+                            }
                         </Text>
+
                         <Text style={[Estilo.statsInfo, { color: isSignificant ? '#28a745' : '#dc3545', fontWeight: 'bold' }]}>
                             {isSignificant
                                 ? "P-value < 0.05: A idade é um preditor estatisticamente significativo."
@@ -253,6 +269,13 @@ const Estilo = StyleSheet.create({
         color: '#212529',
         textAlign: 'center'
     },
+    chartFilterLabel: {
+        fontSize: 14,
+        color: '#dc3545', 
+        fontWeight: 'bold',
+        marginBottom: 10,
+        marginTop: -5, 
+    },
     chartSubtitle: {
         fontSize: 14,
         color: '#6c757d',
@@ -279,6 +302,23 @@ const Estilo = StyleSheet.create({
         fontStyle: 'italic',
         marginTop: 10,
         textAlign: 'center'
+    },
+    disclaimerBox: {
+        marginVertical: 15,
+        padding: 12,
+        backgroundColor: '#f8f9fa',
+        borderWidth: 1,
+        borderColor: '#dee2e6',
+        borderRadius: 8,
+        width: screenWidth - 30,
+        alignItems: 'center',
+    },
+    disclaimerText: {
+        fontSize: 12,
+        color: '#6c757d',
+        textAlign: 'center',
+        fontStyle: 'italic',
+        lineHeight: 18,
     },
     errorText: {
         textAlign: 'center',

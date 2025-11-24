@@ -37,14 +37,12 @@ export default function Paciente({ navigation }) {
         <Text style={Estilo.headerTitle}>Pacientes</Text>
       </View>
       
-      {/* Content */}
       <ScrollView style={Estilo.content}>
-        {/* Description */}
         <Text style={Estilo.description}>
           Gerenciar cadastro de pacientes, histórico médico e informações pessoais.
         </Text>
         
-        {/* Add Patient Card */}
+        {/* Adicionar Paciente */}
         <TouchableOpacity style={Estilo.addCard} onPress={handleAddPatient}>
           <View style={Estilo.addIconContainer}>
             <Text style={Estilo.addIcon}>+</Text>
@@ -55,7 +53,7 @@ export default function Paciente({ navigation }) {
           </View>
         </TouchableOpacity>
         
-        {/* Edit Patient Card */}
+        {/* Editar Paciente */}
         <TouchableOpacity style={Estilo.editCard} onPress={handleEditPatient}>
           <View style={Estilo.editIconContainer}>
             <Octicons style={Estilo.editIcon} name="pencil" size={27} color="rgba(36, 128, 249, 0.8)" />
@@ -75,8 +73,6 @@ const Estilo = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  
-  // Header Styles
   header: {
     backgroundColor: '#ffffff',
     flexDirection: 'row',
@@ -101,8 +97,6 @@ const Estilo = StyleSheet.create({
     fontWeight: '600',
     color: '#212529',
   },
-  
-  // Content Styles
   content: {
     flex: 1,
     paddingHorizontal: 20,
@@ -114,8 +108,6 @@ const Estilo = StyleSheet.create({
     marginTop: 20,
     marginBottom: 30,
   },
-  
-  // Card Styles
   addCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
@@ -146,8 +138,6 @@ const Estilo = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  
-  // Icon Container Styles
   addIconContainer: {
     width: 48,
     height: 48,
@@ -174,8 +164,6 @@ const Estilo = StyleSheet.create({
   editIcon: {
     fontSize: 27,
   },
-  
-  // Card Text Styles
   cardText: {
     flex: 1,
   },
